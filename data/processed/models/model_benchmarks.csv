@@ -1,0 +1,6 @@
+Model,Train_R2,Train_RMSE,Test_R2,Test_RMSE,Test_MAE
+Mean Baseline,0.0,0.4118,-0.0,0.4074,0.3271
+Ridge Regression,0.0432,0.4028,0.0555,0.3959,0.316
+Random Forest,0.4156,0.3148,0.0336,0.4005,0.3184
+Deep MLP (No PDE),0.0384,0.4038,0.041,0.399,0.3188
+Urban Heat PINN,0.0136,0.409,0.0144,0.4045,0.3234

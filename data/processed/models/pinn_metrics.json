@@ -1,0 +1,61 @@
+{
+  "spatial_validation_method": "Contiguous 8km Spatial Block Holdout",
+  "train_samples": 2542,
+  "test_samples": 780,
+  "test_fraction": 0.2348,
+  "test_r2_score": 0.0144,
+  "test_rmse_celsius": 0.4045,
+  "test_mae_celsius": 0.3234,
+  "train_r2_score": 0.0136,
+  "train_rmse_celsius": 0.409,
+  "residual_mean_celsius": 0.03206841884515233,
+  "residual_std_celsius": 0.4031996686889153,
+  "residual_morans_i": -0.0062744028262242965,
+  "prediction_interval_95pct_celsius": 0.790271350630274,
+  "epochs": 60,
+  "lambda_pde": 0.1,
+  "learned_diffusivity_alpha": 0.05000000074505806,
+  "learned_cooling_rate_beta": 0.10000000149011612,
+  "benchmarks": [
+    {
+      "Model": "Mean Baseline",
+      "Train_R2": 0.0,
+      "Train_RMSE": 0.4118,
+      "Test_R2": -0.0,
+      "Test_RMSE": 0.4074,
+      "Test_MAE": 0.3271
+    },
+    {
+      "Model": "Ridge Regression",
+      "Train_R2": 0.0432,
+      "Train_RMSE": 0.4028,
+      "Test_R2": 0.0555,
+      "Test_RMSE": 0.3959,
+      "Test_MAE": 0.316
+    },
+    {
+      "Model": "Random Forest",
+      "Train_R2": 0.4156,
+      "Train_RMSE": 0.3148,
+      "Test_R2": 0.0336,
+      "Test_RMSE": 0.4005,
+      "Test_MAE": 0.3184
+    },
+    {
+      "Model": "Deep MLP (No PDE)",
+      "Train_R2": 0.0384,
+      "Train_RMSE": 0.4038,
+      "Test_R2": 0.041,
+      "Test_RMSE": 0.399,
+      "Test_MAE": 0.3188
+    },
+    {
+      "Model": "Urban Heat PINN",
+      "Train_R2": 0.0136,
+      "Train_RMSE": 0.409,
+      "Test_R2": 0.0144,
+      "Test_RMSE": 0.4045,
+      "Test_MAE": 0.3234
+    }
+  ]
+}

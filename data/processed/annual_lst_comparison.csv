@@ -1,0 +1,3 @@
+Year,observed_months,mean_LST_all_observed,mean_LST_common_months,n_common_months,hottest_month,hottest_LST,coolest_month,coolest_LST
+2024,10,31.9,31.9,10,May,41.0,Jan,24.0
+2025,11,32.41818181818183,32.50000000000001,10,May,41.6,Jan,24.6

@@ -1,0 +1,26 @@
+{
+  "source": "file: ahmedabad_municipal_boundary.geojson",
+  "source_sha256": "1a804f50774d8b6bdb25c432b84a1bc015d6f13d470e4609afd2257725273e67",
+  "source_crs": "EPSG:4326",
+  "n_features": 1,
+  "kind": "municipal",
+  "label": "Ahmedabad municipal boundary",
+  "projected_crs": "EPSG:32643",
+  "buffer_m": 10000,
+  "simplify_tolerance_m": 20,
+  "city_area_km2": 462.01,
+  "study_area_km2": 1570.08,
+  "buffer_ring_km2": 1108.07,
+  "contains_expected_centre": true,
+  "buffer_distance_check_m": {
+    "min": 9994.4,
+    "max": 10000.0
+  },
+  "bounds_wgs84": [
+    72.34671,
+    22.81199,
+    72.79863,
+    23.21222
+  ],
+  "boundary_source": "file"
+}

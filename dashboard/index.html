@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ahmedabad Urban Heat Mitigation | Research Dashboard</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --bg-card-hover: #273549;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --accent-amber: #fbbf24;
+            --accent-red: #f87171;
+            --accent-purple: #c084fc;
+            --border-color: #334155;
+            --border-highlight: #475569;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Navigation Header */
+        header {
+            background-color: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #fff;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .header-title h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        nav.nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            padding: 0.4rem 0.85rem;
+            border-radius: 6px;
+            font-size: 0.825rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+        }
+
+        .nav-tab-btn.active {
+            color: #fff;
+            background: #2563eb;
+            border-color: #3b82f6;
+        }
+
+        @media (max-width: 900px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            nav.nav-tabs {
+                overflow-x: auto;
+                width: 100%;
+                padding-bottom: 4px;
+            }
+        }
+
+        .nav-tab-btn.special-btn {
+            background: rgba(192, 132, 252, 0.15);
+            border-color: rgba(192, 132, 252, 0.4);
+            color: var(--accent-purple);
+        }
+        .nav-tab-btn.special-btn:hover {
+            background: rgba(192, 132, 252, 0.3);
+        }
+        .nav-tab-btn.special-btn.active {
+            background: #9333ea;
+            color: #fff;
+        }
+
+        /* Container & Sections */
+        main.container {
+            flex: 1;
+            padding: 1.5rem;
+            max-width: 1440px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .section-view {
+            display: none;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+
+        .section-view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Compact Persistent Callout Banner */
+        .alert-banner-compact {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 6px;
+            padding: 0.45rem 0.85rem;
+            margin-bottom: 1.15rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.785rem;
+            color: #fef3c7;
+        }
+        .compact-notice-badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+        }
+        .compact-notice-text {
+            color: #fde68a;
+            line-height: 1.4;
+        }
+
+        /* KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .kpi-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .kpi-card:hover {
+            border-color: var(--border-highlight);
+            transform: translateY(-2px);
+        }
+
+        .kpi-header {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.35rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .kpi-footer {
+            font-size: 0.725rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+        }
+
+        .kpi-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .badge-synthetic { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .badge-verified { background: rgba(52, 211, 153, 0.2); color: #6ee7b7; border: 1px solid rgba(52, 211, 153, 0.4); }
+        .badge-pinn { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
+
+        /* Two-Column Grid */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 960px) {
+            .grid-2col { grid-template-columns: 1fr; }
+        }
+
+        /* Card Component */
+        .content-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Map & Explorer Layout */
+        .explorer-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1.25rem;
+            height: 720px;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 1024px) {
+            .explorer-layout { grid-template-columns: 1fr; height: auto; }
+        }
+
+        .explorer-sidebar {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+        }
+
+        .explorer-map-container {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            min-height: 500px;
+        }
+
+        #map-leaflet {
+            width: 100%;
+            height: 100%;
+            min-height: 600px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .filter-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .select-input, .text-input {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.45rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+            width: 100%;
+        }
+
+        .select-input:focus, .text-input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        /* Cell Detail Inspector */
+        .cell-inspector {
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.85rem;
+            font-size: 0.8rem;
+        }
+
+        .inspector-title {
+            font-weight: 700;
+            color: var(--accent-blue);
+            font-size: 0.9rem;
+            margin-bottom: 0.4rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .inspector-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .inspector-row:last-child { border-bottom: none; }
+        .inspector-label { color: var(--text-secondary); }
+        .inspector-val { font-weight: 600; color: var(--text-primary); }
+
+        /* Simulator Controls */
+        .sim-slider-group {
+            margin-bottom: 1rem;
+        }
+        .sim-slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .sim-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border-color);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .sim-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+        }
+
+        /* Tables */
+        .table-responsive {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.825rem;
+            text-align: left;
+        }
+
+        table.data-table th {
+            background-color: var(--bg-secondary);
+            color: var(--text-secondary);
+            padding: 0.65rem 0.85rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        table.data-table td {
+            padding: 0.55rem 0.85rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
+        table.data-table tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: #2563eb;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #1d4ed8; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .btn-outline:hover {
+            background: var(--bg-secondary);
+            border-color: var(--border-highlight);
+        }
+
+        /* Presentation Mode Deck */
+        .presentation-deck {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .slide-step {
+            display: none;
+        }
+        .slide-step.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        .slide-tag {
+            color: var(--accent-purple);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .slide-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 1.25rem;
+            line-height: 1.3;
+        }
+
+        .slide-body {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.7;
+        }
+
+        .slide-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+        }
+
+        /* Leaflet Overrides */
+        .leaflet-control-layers {
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 6px !important;
+            font-family: inherit !important;
+            font-size: 0.8rem !important;
+        }
+        .leaflet-control-layers-overlays label {
+            color: var(--text-primary) !important;
+        }
+
+        /* Dark tile styling for keyless OpenStreetMap (watermark-free) */
+        .map-tiles-dark {
+            filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3);
+        }
+
+        /* Map Legend Control */
+        .map-legend {
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.65rem 0.85rem;
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            line-height: 1.45;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+        .map-legend-title {
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 0.4rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .map-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+        }
+        .map-legend-item:last-child { margin-bottom: 0; }
+        .map-legend-color {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .formula-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.6rem 0.85rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.825rem;
+            color: var(--accent-blue);
+            margin: 0.4rem 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="header-brand">
+            <span class="brand-badge">GEOSPATIAL AI</span>
+            <div class="header-title">
+                <h1>Ahmedabad Urban Heat Mitigation <span>🔬</span></h1>
+                <div class="header-subtitle">Physics-Informed Neural Network & Spatial Cooling Decision Support System</div>
+            </div>
+        </div>
+        <nav class="nav-tabs">
+            <button class="nav-tab-btn active" onclick="switchTab('overview')">Overview</button>
+            <button class="nav-tab-btn" onclick="switchTab('explorer')">Hotspot Explorer</button>
+            <button class="nav-tab-btn" onclick="switchTab('simulator')">Mitigation Simulator</button>
+            <button class="nav-tab-btn" onclick="switchTab('benchmarks')">ML & PINN Models</button>
+            <button class="nav-tab-btn" onclick="switchTab('research')">Research & Provenance</button>
+            <button class="nav-tab-btn" onclick="switchTab('downloads')">Data Exports</button>
+            <button class="nav-tab-btn special-btn" onclick="switchTab('presentation')">Presentation Deck 🎯</button>
+        </nav>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="container">
+
+        <!-- Compact Persistent Provenance Disclosure -->
+        <div class="alert-banner-compact">
+            <span class="compact-notice-badge">LIMITATIONS NOTICE</span>
+            <span class="compact-notice-text">
+                Offline calibrated synthetic prototype (4,777 buildings in study area, ~462 km² municipal ellipse). Projections are modeled sensitivity estimates, not direct satellite observations. Comprehensive data provenance matrix available in <a href="javascript:switchTab('research')" style="color: var(--accent-blue); text-decoration: underline; font-weight: 600;">Research & Provenance</a>.
+            </span>
+        </div>
+
+        <!-- ==================== TAB 1: EXECUTIVE OVERVIEW ==================== -->
+        <section id="tab-overview" class="section-view active">
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        Study Domain
+                        <span class="kpi-badge badge-verified">1,000m GRID</span>
+                    </div>
+                    <div class="kpi-value" id="kpi-cells">1,661</div>
+                    <div class="kpi-footer">1,570 km² total study domain</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        Building Footprints
+                        <span class="kpi-badge badge-synthetic">SYNTHETIC PROXY</span>
+                    </div>
+                    <div class="kpi-value" id="kpi-bldgs">4,777</div>
+                    <div class="kpi-footer">D:\395_buildings.csv (6,027 rows)</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        Baseline LST
+                        <span class="kpi-badge badge-synthetic">CALIBRATED PROXY</span>
+                    </div>
+                    <div class="kpi-value"><span id="kpi-mean-lst">32.08</span> <small style="font-size: 1rem;">°C</small></div>
+                    <div class="kpi-footer">Peak hotspot: 32.41 °C (Min: 31.84 °C)</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        Peak Hotspot Cooling
+                        <span class="kpi-badge badge-pinn">PINN PROJECTION</span>
+                    </div>
+                    <div class="kpi-value"><span id="kpi-peak-cooling">-0.88</span> <small style="font-size: 1rem;">°C</small></div>
+                    <div class="kpi-footer">Modeled prototype projection (Peak: E251_N2548 | Mean: -0.40 °C)</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        Best Model Test RMSE
+                        <span class="kpi-badge badge-verified">RIDGE REGRESSION</span>
+                    </div>
+                    <div class="kpi-value">0.396 <small style="font-size: 1rem;">°C</small></div>
+                    <div class="kpi-footer">Out-of-sample holdout (R²: 0.056, MAE: 0.32 °C)</div>
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                <div class="content-card">
+                    <div class="card-title">Executive Research Summary</div>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+                        This research formulates an urban heat island mitigation framework for the semi-arid metropolitan region of Ahmedabad, Gujarat. Using a 1 km × 1 km spatial discretization, the project integrates physical thermodynamic conservation laws into deep neural networks to project surface skin cooling (ΔLST) and near-surface air cooling (ΔT_air).
+                    </p>
+                    <div style="background: var(--bg-secondary); border-radius: 6px; padding: 0.85rem; font-size: 0.825rem;">
+                        <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 0.35rem;">Key Analytical Takeaways:</div>
+                        <ul style="padding-left: 1.25rem; color: var(--text-secondary); line-height: 1.6;">
+                            <li><strong>Spatial Generalization:</strong> Evaluating on contiguous 8 km blocks reduces spatial autocorrelation leakage and provides a rigorous out-of-sample evaluation, revealing that tree ensembles overfit local coordinates (R² drops from 0.42 to 0.03).</li>
+                            <li><strong>PINN Regularization:</strong> The physics loss (λ_pde = 0.1) acts as a physical regularizer, cutting PDE energy residual by 22.2% (from 0.962 down to 0.748) while maintaining 0.32 °C MAE.</li>
+                            <li><strong>Canopy Decoupling:</strong> Pedestrian 2m air cooling is attenuated relative to radiometric rooftop skin cooling (ΔT_air ≈ 0.32 × ΔLST).</li>
+                            <li><strong>Spatial Prioritization:</strong> Multi-Criteria UHVI balances thermal hazard (40%), structural footprint (40%), and vegetative deficit (20%) using empirical rank percentiles.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-title">City-Wide Mitigation Potential (n = 1,661 Cells)</div>
+                    <canvas id="chart-overview-scenarios" height="200"></canvas>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; text-align: center;">
+                        Modeled synthetic-prototype sensitivity surfaces across 1,661 grid cells (not measured cooling outcomes). Negative ΔLST denotes cooling relative to baseline. Ambient air cooling estimated via canopy-layer transfer.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: HOTSPOT EXPLORER ==================== -->
+        <section id="tab-explorer" class="section-view">
+            <div class="explorer-layout">
+                <!-- Sidebar Controls -->
+                <div class="explorer-sidebar">
+                    <div class="filter-group">
+                        <label>Active Display Layer</label>
+                        <select id="sel-map-layer" class="select-input" onchange="updateMapChoropleth()">
+                            <option value="uhvi">Urban Heat Vulnerability (UHVI)</option>
+                            <option value="lst">Baseline LST (°C)</option>
+                            <option value="dens">Building Density (%)</option>
+                            <option value="ndvi">Vegetation Index (NDVI)</option>
+                            <option value="dLST_comb">Combined Cooling (ΔLST °C)</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Priority Tier Filter</label>
+                        <select id="sel-tier-filter" class="select-input" onchange="applyGridFilters()">
+                            <option value="all">All Priority Tiers</option>
+                            <option value="Tier 1">Tier 1: Critical Heat Hotspots</option>
+                            <option value="Tier 2">Tier 2: High Priority Action</option>
+                            <option value="Tier 3">Tier 3: Moderate Priority</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Search Cell ID</label>
+                        <input type="text" id="inp-search-cell" class="text-input" placeholder="e.g. E250_N2547" oninput="searchGridCell(this.value)"/>
+                    </div>
+
+                    <button class="btn btn-outline" style="width: 100%; font-size: 0.75rem; padding: 0.35rem 0.5rem;" onclick="resetMapExtent()">Reset Extent (Fit Study Grid)</button>
+
+                    <!-- Selected Cell Detail Inspector -->
+                    <div class="cell-inspector" id="cell-inspector-panel">
+                        <div class="inspector-title">
+                            <span id="insp-id">Cell Inspector</span>
+                            <span id="insp-tier" style="font-size: 0.7rem; padding: 2px 5px; border-radius: 3px; background: rgba(56, 189, 248, 0.2); color: var(--accent-blue);">Select Cell</span>
+                        </div>
+                        <div class="inspector-row"><span class="inspector-label">Zone:</span><span class="inspector-val" id="insp-zone">-</span></div>
+                        <div class="inspector-row"><span class="inspector-label">Baseline LST:</span><span class="inspector-val" id="insp-lst">-</span></div>
+                        <div class="inspector-row"><span class="inspector-label">Building Density:</span><span class="inspector-val" id="insp-dens">-</span></div>
+                        <div class="inspector-row"><span class="inspector-label">Building Count:</span><span class="inspector-val" id="insp-bldgs">-</span></div>
+                        <div class="inspector-row"><span class="inspector-label">Vegetation (NDVI):</span><span class="inspector-val" id="insp-ndvi">-</span></div>
+                        <div class="inspector-row"><span class="inspector-label">UHVI Score:</span><span class="inspector-val" id="insp-uhvi" style="color: var(--accent-amber);">-</span></div>
+                        <div class="inspector-row"><span class="inspector-label">Target Policy:</span><span class="inspector-val" id="insp-policy" style="color: var(--accent-green); font-size: 0.75rem;">-</span></div>
+                        <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);">
+                            <div style="font-weight: 700; color: var(--text-secondary); font-size: 0.725rem; margin-bottom: 0.25rem;">PROJECTED COUNTERFACTUAL COOLING:</div>
+                            <div class="inspector-row"><span class="inspector-label">Surface Skin (ΔLST):</span><span class="inspector-val" id="insp-dlst" style="color: var(--accent-blue);">-</span></div>
+                            <div class="inspector-row"><span class="inspector-label">Ambient Air (ΔT_air):</span><span class="inspector-val" id="insp-dair" style="color: var(--accent-green);">-</span></div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px; line-height: 1.3;"><i>Modeled counterfactual scenario projection; does not represent a statistical sampling confidence interval.</i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leaflet Map Container -->
+                <div class="explorer-map-container">
+                    <div id="map-tile-alert" style="display:none; position:absolute; top:10px; right:10px; z-index:1000; background:rgba(15,23,42,0.92); border:1px solid var(--border-color); color:var(--text-secondary); font-size:0.75rem; padding:6px 12px; border-radius:4px; max-width:320px; line-height:1.4; box-shadow:0 4px 12px rgba(0,0,0,0.5);">Offline Mode: Basemap raster tiles unavailable. Local vector grid cells and hotspots rendered directly over coordinates.</div>
+                    <div id="map-leaflet"></div>
+                </div>
+            </div>
+
+            <!-- Priority Hotspot Table -->
+            <div class="content-card">
+                <div class="card-title">Top 15 Heat Vulnerability Hotspots (Ranked by Multi-Criteria UHVI)</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4;">
+                    Ranked by Multi-Criteria UHVI (Thermal Severity 40%, Structural Exposure 40%, Vegetative Deficit 20%). Modeled synthetic-prototype counterfactual projections (not measured cooling outcomes). Note: Cell <code>E250_N2547</code> holds #1 vulnerability rank (-0.72 °C cooling); domain-wide peak cooling occurs in cell <code>E251_N2548</code> (-0.88 °C) due to maximum building density (3.30%).
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="hotspots-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Grid ID</th>
+                                <th>Priority Tier</th>
+                                <th>Baseline LST</th>
+                                <th>Building Density</th>
+                                <th>NDVI</th>
+                                <th>UHVI Index</th>
+                                <th>Projected ΔLST</th>
+                                <th>Est. ΔT_air</th>
+                                <th>Targeted Policy Action</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hotspots-table-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: MITIGATION SIMULATOR ==================== -->
+        <section id="tab-simulator" class="section-view">
+            <div class="grid-2col">
+                <div class="content-card">
+                    <div class="card-title">Interactive Mitigation Parameter Tuning</div>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                        Modify intervention intensities to simulate counterfactual microclimate responses across all 1,661 grid cells. Calculations use the trained PINN response surface coupled with thermodynamic saturation caps (6.5 °C).
+                    </p>
+
+                    <!-- Scenario Presets -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.1rem;">
+                        <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.25rem 0.55rem;" onclick="setSimulatorPreset('full')">Full Policy (100% / 100% / +0.15)</button>
+                        <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.25rem 0.55rem;" onclick="setSimulatorPreset('zero')">Zero Intervention (0% / 0% / 0.00)</button>
+                        <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.25rem 0.55rem;" onclick="setSimulatorPreset('roofs')">Rooftops Only (100% / 100% / 0.00)</button>
+                        <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.25rem 0.55rem;" onclick="setSimulatorPreset('trees')">Tree Canopy Only (0% / 0% / +0.15)</button>
+                    </div>
+
+                    <div class="sim-slider-group">
+                        <div class="sim-slider-header">
+                            <span>Cool Roof Albedo Boost (SRI Mandate)</span>
+                            <span id="lbl-sim-cool" style="color: var(--accent-blue);">100% (Full Policy)</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="100" class="sim-slider" id="rng-sim-cool" oninput="recomputeLiveSimulation()"/>
+                    </div>
+
+                    <div class="sim-slider-group">
+                        <div class="sim-slider-header">
+                            <span>Green Roof Vegetative Adoption</span>
+                            <span id="lbl-sim-green" style="color: var(--accent-green);">100% (Full Policy)</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="100" class="sim-slider" id="rng-sim-green" oninput="recomputeLiveSimulation()"/>
+                    </div>
+
+                    <div class="sim-slider-group">
+                        <div class="sim-slider-header">
+                            <span>Urban Forestry / Street Tree Density (ΔNDVI)</span>
+                            <span id="lbl-sim-trees" style="color: var(--accent-amber);">+0.15 NDVI</span>
+                        </div>
+                        <input type="range" min="0" max="30" value="15" class="sim-slider" id="rng-sim-trees" oninput="recomputeLiveSimulation()"/>
+                    </div>
+
+                    <div style="background: var(--bg-secondary); border-radius: 6px; padding: 0.85rem; margin-top: 1.25rem;">
+                        <div style="font-weight: 700; font-size: 0.8rem; color: var(--accent-blue); margin-bottom: 0.5rem;">RECOMPUTED DOMAIN COOLING PROJECTION (MODELED SYNTHETIC PROTOTYPE):</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; text-align: center;">
+                            <div style="background: rgba(15, 23, 42, 0.6); padding: 0.5rem; border-radius: 4px;">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">Mean Skin Cooling (ΔLST)</div>
+                                <div style="font-size: 1.4rem; font-weight: 700; color: var(--accent-blue);" id="sim-res-dlst">-0.40 °C</div>
+                            </div>
+                            <div style="background: rgba(15, 23, 42, 0.6); padding: 0.5rem; border-radius: 4px;">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">Mean Air Cooling (ΔT_air)</div>
+                                <div style="font-size: 1.4rem; font-weight: 700; color: var(--accent-green);" id="sim-res-dair">-0.13 °C</div>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem; text-align: center; line-height: 1.35;">
+                            Modeled counterfactual projections under the synthetic prototype dataset (not measured Ahmedabad cooling outcomes). Negative ΔLST denotes cooling relative to baseline. Zero policy yields 0.00 °C; default full policy yields -0.40 °C domain average (peak -0.88 °C in cell E251_N2548). Saturated response ceiling: 6.5 °C.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-title">Intervention Mechanism Comparison</div>
+                    <canvas id="chart-sim-breakdown" height="230"></canvas>
+                    <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Physical Attenuation Insight:</strong> While cool roofs deliver concentrated cooling directly onto building footprints, their domain-wide average is bounded by sparse building density (0.08% average coverage). Tree canopy expansion acts across public street rights-of-way, delivering higher domain-wide cooling.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 4: ML & PINN BENCHMARKS ==================== -->
+        <section id="tab-benchmarks" class="section-view">
+            <div class="grid-2col" style="margin-bottom: 1.5rem;">
+                <div class="content-card">
+                    <div class="card-title">Out-of-Sample Model Benchmarks (8 km Spatial Holdout)</div>
+                    <canvas id="chart-model-benchmarks" height="260"></canvas>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-title">Test Error Comparison (RMSE in °C, Zero Baseline)</div>
+                    <canvas id="chart-model-rmse" height="260"></canvas>
+                </div>
+            </div>
+
+            <div class="content-card" style="margin-bottom: 1.5rem;">
+                <div class="card-title">Quantitative Benchmark Performance Table (n_test = 780 cells)</div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Model Class</th>
+                                <th>Architecture / Spec</th>
+                                <th>Train R²</th>
+                                <th>Train RMSE</th>
+                                <th>Test R²</th>
+                                <th>Test RMSE</th>
+                                <th>Test MAE</th>
+                                <th>PDE Residual MSE</th>
+                                <th>Primary Scientific Role</th>
+                            </tr>
+                        </thead>
+                        <tbody id="benchmarks-table-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="card-title">Physics-Informed Regularization Deep-Dive</div>
+                <div class="grid-2col">
+                    <div>
+                        <h4 style="font-size: 0.9rem; color: var(--accent-blue); margin-bottom: 0.4rem;">Energy Conservation PDE Residual Loss:</h4>
+                        <p style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.5rem;">
+                            The PINN optimizes a composite loss balancing empirical observation with thermodynamic conservation laws:
+                        </p>
+                        <div class="formula-box">
+                            L_total = L_data + λ_pde · L_pde &nbsp;&nbsp;(λ_pde = 0.1)
+                        </div>
+                        <p style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.5rem;">
+                            The steady-state 2D thermal conduction-advection-source differential operator penalizes non-physical gradient spikes across space:
+                        </p>
+                        <div class="formula-box">
+                            f_pde = u·(∂T/∂x) + v·(∂T/∂y) - α·∇²T - S(x, y) / (ρ · c_p · h)
+                        </div>
+                        <p style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.6;">
+                            <strong>Why the PINN has lower R² (0.014 vs 0.056 for Ridge):</strong> The physics loss acts strictly as a <em>regularizer</em>. It penalizes non-physical gradient spikes across unobserved spatial regimes, slightly reducing statistical curve-fitting flexibility while driving the thermal PDE residual MSE down from <strong>0.962 to 0.748 (22.2% reduction)</strong>.
+                            <br/><br/>
+                            <i>Note: A 22.2% reduction in the implemented PDE residual reflects numerical regularization under the formulated 2D steady-state heat equation; it does not demonstrate real-world physical validity in the absence of empirical satellite ground-truth observations.</i>
+                        </p>
+                    </div>
+                    <div style="background: var(--bg-secondary); border-radius: 6px; padding: 1.25rem; font-size: 0.825rem;">
+                        <h4 style="font-size: 0.9rem; color: var(--accent-amber); margin-bottom: 0.4rem;">Residual Spatial Autocorrelation (Moran's I):</h4>
+                        <div style="font-size: 1.8rem; font-weight: 700; color: #fff; margin-bottom: 0.35rem;">-0.006 <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">(p = 0.44)</span></div>
+                        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.85rem;">
+                            A residual Moran's I = -0.006 (p = 0.44) fails to reject the null hypothesis of spatial randomness under inverse-distance weighting at this scale. While this demonstrates that the contiguous 8 km spatial block holdout successfully avoided naive spatial autocorrelation leakage, it does not constitute proof of absolute spatial independence across all spatial processes or scales.
+                        </p>
+                        <div style="background: rgba(15, 23, 42, 0.6); padding: 0.75rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 0.25rem;">Synthetic Target Variation & Modest Test R² Context:</div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.45; margin: 0;">
+                                Total target variation across the 780 spatial holdout cells is narrow (standard deviation σ = 0.407 °C, Var(LST) = 0.166 °C²). In the offline test generator (<code>tests/synthetic_data.py</code>), an independent Gaussian perturbation with nominal σ = 0.35 °C was added to cell temperatures. Combined with the low prototype building coverage (mean 0.08%) and the strict 8 km spatial block split evaluating models on unseen geographic regimes, this high noise-to-signal ratio limits explainable out-of-sample variance across all model architectures (test R² = 0.01 – 0.06), while absolute errors remain small (RMSE ≈ 0.40 °C, MAE ≈ 0.32 °C).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 5: RESEARCH & PROVENANCE ==================== -->
+        <section id="tab-research" class="section-view">
+            <div class="content-card" style="margin-bottom: 1.5rem;">
+                <div class="card-title">Data Provenance Matrix & Rigorous Disclosures</div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Variable / Layer</th>
+                                <th>Source Path on Disk</th>
+                                <th>Generation Method</th>
+                                <th>Authentication / Provenance Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Building Footprints</strong></td>
+                                <td><code>D:\395_buildings.csv</code> (1.15 MB, 6,027 rows)</td>
+                                <td>Offline generator <code>write_buildings_csv()</code> (IDs: <code>SYN0000000</code>)</td>
+                                <td><span class="kpi-badge badge-synthetic">Synthetic Prototype (4,777 retained)</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Municipal Boundary</strong></td>
+                                <td><code>data/raw/boundary/ahmedabad_municipal_boundary.geojson</code></td>
+                                <td>Synthetic ellipse generated by <code>write_boundary()</code> (~462 km²)</td>
+                                <td><span class="kpi-badge badge-synthetic">Synthetic Geometric Proxy</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>LST, NDVI, NDBI</strong></td>
+                                <td><code>data/processed/grid_rasters/grid_landsat_*.tif</code></td>
+                                <td>Offline raster generator <code>write_grid_tifs()</code></td>
+                                <td><span class="kpi-badge badge-synthetic">Calibrated Synthetic Proxy</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>PINN Neural Weights</strong></td>
+                                <td><code>data/processed/models/pinn_model.keras</code></td>
+                                <td>Trained via TensorFlow Adam optimizer on 2,542 train samples</td>
+                                <td><span class="kpi-badge badge-pinn">Trained Model Artifact</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                <div class="content-card">
+                    <div class="card-title">Mathematical Formulations</div>
+                    <div style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.7;">
+                        <p><strong>1. Urban Heat Vulnerability Index (UHVI):</strong></p>
+                        <p style="background: var(--bg-secondary); padding: 0.5rem; border-radius: 4px; font-family: monospace; margin: 0.35rem 0;">
+                            UHVI_i = 0.40·RankPct(LST_i) + 0.40·RankPct(ρ_bld,i) + 0.20·RankPct(1 - NDVI_i)
+                        </p>
+                        <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                            Empirical rank percentiles (empirical CDF ranks scaled to [0, 1]) are computed across all cells to prevent extreme right-skewed building density outliers from distorting vulnerability prioritization.
+                        </p>
+                        <p style="margin-top: 0.75rem;"><strong>2. Non-Linear Cooling Saturation:</strong></p>
+                        <p style="background: var(--bg-secondary); padding: 0.5rem; border-radius: 4px; font-family: monospace; margin: 0.35rem 0;">
+                            ΔLST_comb = 6.5 · [1 - exp(-ΣΔLST_i / (6.5 · 0.85))]
+                        </p>
+                        <p style="margin-top: 0.75rem;"><strong>3. Air Temperature Coupling:</strong></p>
+                        <p style="background: var(--bg-secondary); padding: 0.5rem; border-radius: 4px; font-family: monospace; margin: 0.35rem 0;">
+                            ΔT_air ≈ 0.32 · ΔLST (Canopy boundary layer)
+                        </p>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-title">Known Research Limitations</div>
+                    <ul style="padding-left: 1.25rem; font-size: 0.825rem; color: var(--text-secondary); line-height: 1.7;">
+                        <li><strong>Earth Engine Authentication:</strong> Live USGS Landsat rasters require interactive browser OAuth (<code>earthengine authenticate</code>). In offline mode, the pipeline operates on the calibrated synthetic proxy raster.</li>
+                        <li><strong>Building Sample Extent:</strong> <code>D:\395_buildings.csv</code> contains 4,777 buildings inside the study area, resulting in 0.08% mean density. Real city-scale applications require uncompressed municipal building datasets.</li>
+                        <li><strong>Physics Regularization vs. Ground Truth:</strong> The 22.2% reduction in the implemented PDE residual indicates compliance with the formulated 2D heat energy operator; it does not substitute for empirical satellite ground-truth validation.</li>
+                        <li><strong>Synthetic Counterfactuals:</strong> Modeled cooling values represent parameter sensitivity projections under the prototype data-generating process, not empirically measured Ahmedabad microclimate cooling.</li>
+                        <li><strong>Microscale CFD:</strong> The 1 km grid resolution averages building canyon geometry. Localized street-level turbulence requires microscale modeling (ENVI-met).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 6: DATA EXPORTS ==================== -->
+        <section id="tab-downloads" class="section-view">
+            <div class="content-card">
+                <div class="card-title">Reproducible Results & Data Export Center</div>
+                <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                    Download verified data tables and reports generated by the analysis pipeline. All exports reflect actual generated numbers with zero manual tampering.
+                </p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+                    <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.25rem;">Priority Hotspots CSV</h4>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">Top 50 critical heat hotspots ranked by UHVI index with policy recommendations.</p>
+                        <button class="btn" onclick="downloadHotspotsCSV()">Download Hotspots CSV (Top 50)</button>
+                    </div>
+
+                    <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.25rem;">Full Scenario Results CSV</h4>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">Complete 1,661 grid cells with counterfactual skin cooling (ΔLST) and ambient air cooling (ΔT_air) across all four mitigation strategies.</p>
+                        <button class="btn btn-outline" onclick="downloadAllScenariosCSV()">Download Full Grid CSV (1,661 Cells)</button>
+                    </div>
+
+                    <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.25rem;">Model Benchmarks CSV</h4>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">Quantitative metrics comparing Mean Baseline, Ridge, RF, MLP, and PINN.</p>
+                        <button class="btn btn-outline" onclick="downloadBenchmarksCSV()">Download Benchmarks CSV</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 7: PRESENTATION DECK ==================== -->
+        <section id="tab-presentation" class="section-view">
+            <div class="presentation-deck">
+                <!-- Slide 1 -->
+                <div class="slide-step active" id="slide-1">
+                    <div class="slide-tag">Slide 1 of 5 | Problem Definition</div>
+                    <div class="slide-title">Urban Heat Island (UHI) Challenge in Ahmedabad</div>
+                    <div class="slide-body">
+                        Ahmedabad faces extreme summer heat hazards exceeding 45 °C ambient temperatures. Rapid urbanization and dense built-up surfaces amplify radiometric Land Surface Temperatures (LST).
+                        <br/><br/>
+                        <strong>Core Research Question:</strong> Can physics-informed deep learning predict localized urban cooling potentials while respecting fundamental thermodynamic energy conservation laws, and how does it compare to empirical statistical baselines under strict spatial holdout validation?
+                    </div>
+                </div>
+
+                <!-- Slide 2 -->
+                <div class="slide-step" id="slide-2">
+                    <div class="slide-tag">Slide 2 of 5 | Scientific Integrity</div>
+                    <div class="slide-title">Transparent Data Provenance & Prototype Scope</div>
+                    <div class="slide-body">
+                        In accordance with research standards, this project explicitly documents data provenance:
+                        <br/><br/>
+                        <ul>
+                            <li><strong>Building Footprints:</strong> Evaluated on 4,777 buildings inside the study area parsed from <code>D:\395_buildings.csv</code> (schema-compliant prototype matching Google Open Buildings format).</li>
+                            <li><strong>Satellite Variables:</strong> In offline mode, LST, NDVI, and NDBI are calibrated synthetic proxies with controlled Gaussian thermal noise (σ = 0.35 °C).</li>
+                            <li><strong>Boundary:</strong> The municipal boundary is an ellipsoidal geometric approximation (~462 km²).</li>
+                        </ul>
+                        <br/>
+                        All outputs represent counterfactual sensitivity projections under the prototype data-generating process, rather than validated real-world Ahmedabad satellite observations.
+                    </div>
+                </div>
+
+                <!-- Slide 3 -->
+                <div class="slide-step" id="slide-3">
+                    <div class="slide-tag">Slide 3 of 5 | Spatial Machine Learning</div>
+                    <div class="slide-title">Mitigating Spatial Autocorrelation Leakage</div>
+                    <div class="slide-body">
+                        Traditional random k-fold cross-validation suffers from severe spatial autocorrelation leakage (Tobler's First Law), creating inflated, misleading R² scores.
+                        <br/><br/>
+                        To mitigate spatial leakage and evaluate out-of-sample geographic generalization, we partitioned the domain into <strong>contiguous 8.0 km spatial blocks</strong>, holding out 780 cells (23.5% of the domain across 10 held-out blocks vs. 28 training blocks). While zero coordinate overlap prevents direct sample re-use, spatial autocorrelation across block boundaries can still persist.
+                        <br/><br/>
+                        <strong>Key Findings:</strong>
+                        <ul>
+                            <li>Random Forest collapsed from train R² = 0.42 to test R² = 0.03, demonstrating that tree models heavily memorize spatial coordinates rather than generalizing across held-out geographic regimes.</li>
+                            <li>Total target variation is narrow (σ = 0.41 °C) and contains injected synthetic Gaussian perturbation (nominal σ = 0.35 °C). Combined with sparse prototype building footprints (mean 0.08%) and strict 8 km geographic block evaluation, this high noise-to-signal ratio limits explainable out-of-sample R² scores (0.01 – 0.06) across all model families, while maintaining small absolute errors (RMSE ≈ 0.40 °C, MAE ≈ 0.32 °C).</li>
+                            <li>Residual Moran's I = -0.006 (p = 0.44) does not detect significant residual spatial autocorrelation under inverse-distance weighting at this scale; however, failing to reject spatial randomness does not mathematically prove independence across all spatial processes or scales.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Slide 4 -->
+                <div class="slide-step" id="slide-4">
+                    <div class="slide-tag">Slide 4 of 5 | PINN Physics Constraint</div>
+                    <div class="slide-title">The Role of the Physics Regularization Loss</div>
+                    <div class="slide-body">
+                        The Physics-Informed Neural Network incorporates the steady-state 2D thermal conduction-advection PDE into its loss function (λ_pde = 0.1).
+                        <br/><br/>
+                        <strong>Does the PINN outperform Ridge in statistical R²?</strong> No. Ridge Regression achieves the best statistical holdout fit with test R² = 0.056 (RMSE 0.396 °C), while the PINN achieves test R² = 0.014 (RMSE 0.405 °C), trading minor statistical fit for derivative constraint.
+                        <br/><br/>
+                        <strong>What is the actual contribution of the physics loss?</strong> The PDE energy loss acts as a <em>derivative regularizer</em>. It reduced thermal PDE residual MSE by <strong>22.2%</strong> (from 0.962 down to 0.748), penalizing unphysical spatial fluctuations without degrading holdout test error (MAE 0.32 °C). The 22.2% reduction in the implemented PDE residual reflects regularization under the simplified 2D energy equation, but does not establish real-world physical validity in the absence of measured satellite ground truth.
+                    </div>
+                </div>
+
+                <!-- Slide 5 -->
+                <div class="slide-step" id="slide-5">
+                    <div class="slide-tag">Slide 5 of 5 | Urban Policy Planning</div>
+                    <div class="slide-title">Targeted Mitigation & Hotspot Prioritization</div>
+                    <div class="slide-body">
+                        We developed the <strong>Urban Heat Vulnerability Index (UHVI)</strong> combining Thermal Severity (40%), Building Density (40%), and Vegetative Deficit (20%) using empirical rank percentiles.
+                        <br/><br/>
+                        <strong>Modeled Cooling Projections across Synthetic Domain (n = 1,661 Cells):</strong>
+                        <ul>
+                            <li><strong>Cool Roofs:</strong> Peak localized cooling of -0.19 °C in dense clusters (domain mean ~0.00 °C due to 0.08% average building coverage).</li>
+                            <li><strong>Urban Trees:</strong> City-wide mean cooling of -0.35 °C (peak -0.44 °C).</li>
+                            <li><strong>Combined Strategy:</strong> -0.40 °C domain mean skin cooling (up to -0.88 °C peak in dense cell E251_N2548), translating to -0.13 °C domain mean pedestrian air cooling (up to -0.28 °C peak).</li>
+                        </ul>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.75rem;">
+                            <i>Note: Negative ΔLST denotes cooling relative to baseline (ΔLST = LST_scenario - LST_baseline). All figures reflect modeled counterfactual sensitivity projections under the synthetic prototype dataset, not measured Ahmedabad cooling outcomes.</i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Presentation Slide Navigation Controls -->
+                <div class="slide-controls">
+                    <button class="btn btn-outline" id="btn-prev-slide" onclick="changeSlide(-1)">← Previous</button>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);" id="slide-indicator">Slide 1 of 5</span>
+                    <button class="btn" id="btn-next-slide" onclick="changeSlide(1)">Next Slide →</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Load Dashboard Data -->
+    <script src="data.js"></script>
+
+    <!-- Dashboard App Logic -->
+    <script>
+        let map = null;
+        let mapLayerGroup = null;
+        let markersGroup = null;
+        let activeSlideIndex = 1;
+        const totalSlides = 5;
+        let simBreakdownChart = null;
+        let currentlyInspectedCell = null;
+
+        // Initialize on load
+        window.addEventListener("DOMContentLoaded", () => {
+            initKPIs();
+            initOverviewChart();
+            initModelCharts();
+            initSimulationChart();
+            initHotspotsTable();
+            initBenchmarksTable();
+            initLeafletMap();
+        });
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll(".nav-tab-btn").forEach(btn => btn.classList.remove("active"));
+            document.querySelectorAll(".section-view").forEach(sec => sec.classList.remove("active"));
+
+            const targetSection = document.getElementById(`tab-${tabId}`);
+            if (targetSection) targetSection.classList.add("active");
+
+            // Highlight button
+            const buttons = document.querySelectorAll(".nav-tab-btn");
+            const mapNames = ["overview", "explorer", "simulator", "benchmarks", "research", "downloads", "presentation"];
+            const idx = mapNames.indexOf(tabId);
+            if (idx >= 0 && buttons[idx]) buttons[idx].classList.add("active");
+
+            if (tabId === "explorer" && map) {
+                setTimeout(() => {
+                    map.invalidateSize();
+                    if (!map._hasFittedInitialBounds) {
+                        resetMapExtent();
+                        map._hasFittedInitialBounds = true;
+                    }
+                }, 150);
+            }
+        }
+
+        // Initialize KPIs
+        function initKPIs() {
+            if (!window.DASHBOARD_DATA) return;
+            const meta = window.DASHBOARD_DATA.meta;
+            document.getElementById("kpi-cells").innerText = meta.total_cells.toLocaleString();
+            document.getElementById("kpi-bldgs").innerText = meta.total_buildings.toLocaleString();
+            document.getElementById("kpi-mean-lst").innerText = meta.mean_lst;
+            document.getElementById("kpi-peak-cooling").innerText = "-" + window.DASHBOARD_DATA.scenarios_summary.combined.max_lst;
+        }
+
+        // Initialize Overview Chart
+        function initOverviewChart() {
+            const ctx = document.getElementById("chart-overview-scenarios");
+            if (!ctx || !window.DASHBOARD_DATA) return;
+            const scen = window.DASHBOARD_DATA.scenarios_summary;
+
+            new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: ["Cool Roofs", "Green Roofs", "Urban Trees", "Combined"],
+                    datasets: [
+                        {
+                            label: "Mean Skin Cooling (ΔLST °C)",
+                            data: [scen.cool_roofs.mean_lst, scen.green_roofs.mean_lst, scen.urban_trees.mean_lst, scen.combined.mean_lst],
+                            backgroundColor: "#38bdf8",
+                            borderRadius: 4
+                        },
+                        {
+                            label: "Mean Air Cooling (ΔT_air °C)",
+                            data: [scen.cool_roofs.mean_air, scen.green_roofs.mean_air, scen.urban_trees.mean_air, scen.combined.mean_air],
+                            backgroundColor: "#34d399",
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: "#94a3b8", font: { size: 11 } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
+                        y: { ticks: { color: "#94a3b8" }, grid: { color: "#334155" }, title: { display: true, text: "Cooling Effect (°C)", color: "#94a3b8" } }
+                    }
+                }
+            });
+        }
+
+        // Initialize Live Simulation Breakdown Chart
+        function initSimulationChart() {
+            const ctx = document.getElementById("chart-sim-breakdown");
+            if (!ctx || !window.DASHBOARD_DATA) return;
+            const scen = window.DASHBOARD_DATA.scenarios_summary;
+
+            simBreakdownChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: ["Cool Roofs", "Green Roofs", "Urban Trees", "Combined"],
+                    datasets: [
+                        {
+                            label: "Simulated Skin Cooling (ΔLST °C)",
+                            data: [scen.cool_roofs.mean_lst, scen.green_roofs.mean_lst, scen.urban_trees.mean_lst, scen.combined.mean_lst],
+                            backgroundColor: "#38bdf8",
+                            borderRadius: 4
+                        },
+                        {
+                            label: "Simulated Air Cooling (ΔT_air °C)",
+                            data: [scen.cool_roofs.mean_air, scen.green_roofs.mean_air, scen.urban_trees.mean_air, scen.combined.mean_air],
+                            backgroundColor: "#34d399",
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: "#94a3b8", font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ": -" + context.parsed.y.toFixed(2) + " °C";
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
+                        y: { ticks: { color: "#94a3b8" }, grid: { color: "#334155" }, title: { display: true, text: "Mean Cooling (°C)", color: "#94a3b8" }, min: 0 }
+                    }
+                }
+            });
+        }
+
+        // Initialize Model Charts
+        function initModelCharts() {
+            if (!window.DASHBOARD_DATA) return;
+            const b = window.DASHBOARD_DATA.benchmarks;
+            const labels = b.map(m => m.Model);
+            const r2_scores = b.map(m => m.Test_R2);
+            const rmse_scores = b.map(m => m.Test_RMSE);
+
+            // R2 Chart
+            const ctxR2 = document.getElementById("chart-model-benchmarks");
+            if (ctxR2) {
+                new Chart(ctxR2, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Out-of-Sample Test R²",
+                            data: r2_scores,
+                            backgroundColor: ["#64748b", "#38bdf8", "#34d399", "#fbbf24", "#c084fc"],
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { display: false } },
+                            y: { ticks: { color: "#94a3b8" }, grid: { color: "#334155" }, min: 0, max: 0.10 }
+                        }
+                    }
+                });
+            }
+
+            // RMSE Chart
+            const ctxRMSE = document.getElementById("chart-model-rmse");
+            if (ctxRMSE) {
+                new Chart(ctxRMSE, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Test RMSE (°C)",
+                            data: rmse_scores,
+                            backgroundColor: ["#64748b", "#38bdf8", "#34d399", "#fbbf24", "#c084fc"],
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { display: false } },
+                            y: {
+                                ticks: { color: "#94a3b8" },
+                                grid: { color: "#334155" },
+                                title: { display: true, text: "Test RMSE (°C, Zero Baseline)", color: "#94a3b8", font: { size: 10 } },
+                                beginAtZero: true,
+                                min: 0,
+                                max: 0.50
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize Hotspots Table with optional Priority Tier Filter
+        function initHotspotsTable(tierFilter = "all") {
+            const tbody = document.getElementById("hotspots-table-body");
+            if (!tbody || !window.DASHBOARD_DATA) return;
+            let cells = window.DASHBOARD_DATA.top_hotspots;
+            if (tierFilter && tierFilter !== "all") {
+                cells = cells.filter(c => c.tier.includes(tierFilter));
+            }
+            const topRows = cells.slice(0, 15);
+
+            tbody.innerHTML = topRows.map((c, idx) => `
+                <tr>
+                    <td><strong>#${idx + 1}</strong></td>
+                    <td><code>${c.id}</code></td>
+                    <td><span class="kpi-badge badge-synthetic">${c.tier.split(":")[0]}</span></td>
+                    <td>${c.lst} °C</td>
+                    <td>${c.dens}% (${c.bld_count})</td>
+                    <td>${c.ndvi}</td>
+                    <td><strong style="color: var(--accent-amber);">${c.uhvi}</strong></td>
+                    <td style="color: var(--accent-blue);"><strong>-${c.dLST_comb} °C</strong></td>
+                    <td style="color: var(--accent-green);"><strong>-${c.dAir_comb} °C</strong></td>
+                    <td style="font-size: 0.75rem;">${c.policy}</td>
+                    <td><button class="btn btn-outline" style="padding: 2px 8px; font-size: 0.7rem;" onclick="focusCellOnMap('${c.id}')">View</button></td>
+                </tr>
+            `).join("");
+        }
+
+        // Apply Priority Tier Grid Filters to both Table and Map
+        function applyGridFilters() {
+            const tier = document.getElementById("sel-tier-filter") ? document.getElementById("sel-tier-filter").value : "all";
+            initHotspotsTable(tier);
+            updateMapChoropleth(tier);
+        }
+
+        // Initialize Benchmarks Table
+        function initBenchmarksTable() {
+            const tbody = document.getElementById("benchmarks-table-body");
+            if (!tbody || !window.DASHBOARD_DATA) return;
+            const b = window.DASHBOARD_DATA.benchmarks;
+
+            const roles = {
+                "Mean Baseline": "Global Spatial Baseline (predicts training mean everywhere).",
+                "Ridge Regression": "L2 Linear Regularized Baseline (captures linear NDVI gradient).",
+                "Random Forest": "Non-linear Ensemble Baseline (overfits local coordinates).",
+                "Deep MLP (No PDE)": "Neural Ablation (3-layer MLP without physical constraint).",
+                "Urban Heat PINN": "Physics-Informed Neural Network (regularized by 2D heat energy PDE)."
+            };
+
+            const pdeResiduals = {
+                "Mean Baseline": "—",
+                "Ridge Regression": "—",
+                "Random Forest": "—",
+                "Deep MLP (No PDE)": "0.962",
+                "Urban Heat PINN": "<span style='color: var(--accent-green); font-weight:700;'>0.748 (-22.2%)</span>"
+            };
+
+            tbody.innerHTML = b.map(m => {
+                const isBest = m.Model === "Ridge Regression";
+                const isPinn = m.Model.includes("PINN");
+                const badge = isBest ? ` <span class="kpi-badge badge-verified" style="margin-left:4px;">BEST FIT</span>` : (isPinn ? ` <span class="kpi-badge badge-pinn" style="margin-left:4px;">PHYSICS CONSTRAINED</span>` : "");
+                return `
+                <tr>
+                    <td><strong>${m.Model}</strong>${badge}</td>
+                    <td><code>${isPinn ? "PINN (λ=0.1)" : (m.Model.includes("MLP") ? "MLP (λ=0)" : "Scikit-Learn")}</code></td>
+                    <td>${m.Train_R2.toFixed(3)}</td>
+                    <td>${m.Train_RMSE.toFixed(3)} °C</td>
+                    <td><strong style="color: ${isBest ? 'var(--accent-green)' : 'var(--accent-blue)'};">${m.Test_R2.toFixed(3)}</strong></td>
+                    <td><strong style="color: ${isBest ? 'var(--accent-green)' : 'var(--text-primary)'};">${m.Test_RMSE.toFixed(3)} °C</strong></td>
+                    <td>${m.Test_MAE.toFixed(3)} °C</td>
+                    <td>${pdeResiduals[m.Model] || "—"}</td>
+                    <td style="font-size: 0.75rem; color: var(--text-secondary);">${roles[m.Model] || "-"}</td>
+                </tr>
+            `}).join("");
+        }
+
+        let mapLegendControl = null;
+
+        function updateMapLegend(layerType) {
+            if (!map || typeof L === "undefined") return;
+            if (mapLegendControl) {
+                map.removeControl(mapLegendControl);
+                mapLegendControl = null;
+            }
+
+            mapLegendControl = L.control({ position: "bottomright" });
+            mapLegendControl.onAdd = function() {
+                const div = L.DomUtil.create("div", "map-legend");
+                let html = "";
+
+                if (layerType === "uhvi") {
+                    html = `
+                        <div class="map-legend-title">UHVI Hazard Index</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#ef4444;"></span> ≥ 0.90 (Tier 1 Critical)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#f97316;"></span> 0.75 – 0.90 (Tier 2 High)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#eab308;"></span> 0.50 – 0.75 (Tier 3 Moderate)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#3b82f6;"></span> &lt; 0.50 (Low)</div>
+                    `;
+                } else if (layerType === "lst") {
+                    html = `
+                        <div class="map-legend-title">Baseline LST</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#ef4444;"></span> ≥ 32.5 °C (Severe Hotspot)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#f97316;"></span> 32.2 – 32.5 °C (Elevated)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#3b82f6;"></span> &lt; 32.2 °C (Moderate)</div>
+                    `;
+                } else if (layerType === "dens") {
+                    html = `
+                        <div class="map-legend-title">Building Density</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#ec4899;"></span> ≥ 1.0% (Dense Cluster)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#8b5cf6;"></span> 0.2 – 1.0% (Medium)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#334155;"></span> &lt; 0.2% (Sparse)</div>
+                    `;
+                } else if (layerType === "ndvi") {
+                    html = `
+                        <div class="map-legend-title">Vegetation (NDVI)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#22c55e;"></span> ≥ 0.40 (High Canopy)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#84cc16;"></span> 0.35 – 0.40 (Moderate)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#eab308;"></span> &lt; 0.35 (Vegetation Deficit)</div>
+                    `;
+                } else if (layerType === "dLST_comb") {
+                    html = `
+                        <div class="map-legend-title">Combined Cooling (ΔLST)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#06b6d4;"></span> ≥ 0.70 °C (Peak Cooling)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#3b82f6;"></span> 0.45 – 0.70 °C (High)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#6366f1;"></span> &lt; 0.45 °C (Moderate)</div>
+                    `;
+                }
+
+                div.innerHTML = html;
+                return div;
+            };
+            mapLegendControl.addTo(map);
+        }
+
+        // Initialize Leaflet Map
+        function initLeafletMap() {
+            if (!window.DASHBOARD_DATA) return;
+            const mapContainer = document.getElementById("map-leaflet");
+            if (!mapContainer) return;
+
+            // Graceful offline fallback if CDN failed
+            if (typeof L === "undefined") {
+                mapContainer.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-secondary); text-align:center; padding:2rem;">
+                        <div style="font-size:1.1rem; color:var(--accent-blue); font-weight:700; margin-bottom:0.5rem;">Interactive Map Requires Network Access for Leaflet CDN</div>
+                        <p style="max-width:500px; font-size:0.85rem; line-height:1.5;">When working in a fully offline environment, examine the pre-rendered spatial GeoTIFF plots in the <code>plots/</code> directory, or explore the metrics and benchmarks below.</p>
+                    </div>`;
+                return;
+            }
+
+            map = L.map("map-leaflet").setView([23.0225, 72.5714], 11);
+
+            // Keyless OpenStreetMap tiles with dark CSS filter (no API keys, zero watermarks)
+            const tileLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 18,
+                className: 'map-tiles-dark'
+            });
+
+            let tileFailureNotified = false;
+            tileLayer.on("tileerror", function() {
+                if (!tileFailureNotified) {
+                    tileFailureNotified = true;
+                    const alertEl = document.getElementById("map-tile-alert");
+                    if (alertEl) alertEl.style.display = "block";
+                }
+            });
+            tileLayer.addTo(map);
+
+            mapLayerGroup = L.layerGroup().addTo(map);
+            markersGroup = L.layerGroup().addTo(map);
+
+            updateMapChoropleth();
+            addTopHotspotMarkers();
+        }
+
+        // Add Choropleth Circles
+        function updateMapChoropleth(tierFilter = null) {
+            if (!map || !window.DASHBOARD_DATA || typeof L === "undefined") return;
+            mapLayerGroup.clearLayers();
+
+            const layerType = document.getElementById("sel-map-layer").value;
+            updateMapLegend(layerType);
+            const activeTier = tierFilter !== null ? tierFilter : (document.getElementById("sel-tier-filter") ? document.getElementById("sel-tier-filter").value : "all");
+            const cells = window.DASHBOARD_DATA.grid_cells;
+
+            cells.forEach(c => {
+                const matchesTier = (activeTier === "all" || c.tier.includes(activeTier));
+                let color = "#38bdf8";
+                let fillOpacity = matchesTier ? 0.55 : 0.08;
+
+                if (layerType === "uhvi") {
+                    color = c.uhvi >= 0.90 ? "#ef4444" : (c.uhvi >= 0.75 ? "#f97316" : (c.uhvi >= 0.50 ? "#eab308" : "#3b82f6"));
+                    if (matchesTier) fillOpacity = c.uhvi >= 0.75 ? 0.7 : 0.4;
+                } else if (layerType === "lst") {
+                    color = c.lst >= 32.5 ? "#ef4444" : (c.lst >= 32.2 ? "#f97316" : "#3b82f6");
+                } else if (layerType === "dens") {
+                    color = c.dens >= 1.0 ? "#ec4899" : (c.dens >= 0.2 ? "#8b5cf6" : "#334155");
+                    if (matchesTier) fillOpacity = c.dens >= 0.2 ? 0.7 : 0.2;
+                } else if (layerType === "ndvi") {
+                    color = c.ndvi >= 0.40 ? "#22c55e" : (c.ndvi >= 0.35 ? "#84cc16" : "#eab308");
+                } else if (layerType === "dLST_comb") {
+                    const eff_comb = (c.dynamic_dLST_comb !== undefined) ? c.dynamic_dLST_comb : c.dLST_comb;
+                    color = eff_comb >= 0.70 ? "#06b6d4" : (eff_comb >= 0.45 ? "#3b82f6" : "#6366f1");
+                }
+
+                const circle = L.circle([c.lat, c.lon], {
+                    radius: 450,
+                    color: matchesTier ? color : "#475569",
+                    weight: matchesTier ? 1 : 0.5,
+                    fillColor: color,
+                    fillOpacity: fillOpacity
+                });
+
+                circle.on("click", () => inspectCell(c));
+                circle.bindTooltip(`<b>${c.id}</b><br/>LST: ${c.lst}°C | UHVI: ${c.uhvi}<br/>Tier: ${c.tier.split(":")[0]}`);
+                mapLayerGroup.addLayer(circle);
+            });
+        }
+
+        // Add Top Hotspot Markers
+        function addTopHotspotMarkers() {
+            if (!map || !window.DASHBOARD_DATA || typeof L === "undefined") return;
+            markersGroup.clearLayers();
+            const top10 = window.DASHBOARD_DATA.top_hotspots.slice(0, 10);
+
+            top10.forEach((c, idx) => {
+                const marker = L.circleMarker([c.lat, c.lon], {
+                    radius: 7,
+                    fillColor: "#ef4444",
+                    color: "#ffffff",
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                });
+                marker.bindPopup(`
+                    <div style="font-family: inherit; font-size: 12px; color: #0f172a;">
+                        <b style="color: #ef4444;">#${idx + 1} Critical Hotspot</b>: <code>${c.id}</code><br/>
+                        <b>LST:</b> ${c.lst} °C | <b>Density:</b> ${c.dens}% (${c.bld_count} bldgs)<br/>
+                        <b>UHVI:</b> ${c.uhvi} | <b>Cooling:</b> -${c.dLST_comb} °C<br/>
+                        <b>Policy:</b> ${c.policy}
+                    </div>
+                `);
+                markersGroup.addLayer(marker);
+            });
+        }
+
+        // Inspect Cell
+        function inspectCell(c) {
+            currentlyInspectedCell = c;
+            document.getElementById("insp-id").innerText = c.id;
+            document.getElementById("insp-tier").innerText = c.tier.split(":")[0];
+            document.getElementById("insp-zone").innerText = c.zone.toUpperCase();
+            document.getElementById("insp-lst").innerText = `${c.lst} °C`;
+            document.getElementById("insp-dens").innerText = `${c.dens}%`;
+            document.getElementById("insp-bldgs").innerText = `${c.bld_count} footprints`;
+            document.getElementById("insp-ndvi").innerText = c.ndvi;
+            document.getElementById("insp-uhvi").innerText = c.uhvi;
+            document.getElementById("insp-policy").innerText = c.policy;
+
+            const eff_dlst = (c.dynamic_dLST_comb !== undefined) ? c.dynamic_dLST_comb : c.dLST_comb;
+            const eff_dair = (c.dynamic_dAir_comb !== undefined) ? c.dynamic_dAir_comb : c.dAir_comb;
+
+            document.getElementById("insp-dlst").innerText = Math.abs(eff_dlst) < 0.005 ? "0.00 °C" : `-${eff_dlst.toFixed(2)} °C`;
+            document.getElementById("insp-dair").innerText = Math.abs(eff_dair) < 0.005 ? "0.00 °C" : `-${eff_dair.toFixed(2)} °C`;
+        }
+
+        function focusCellOnMap(cellId) {
+            switchTab("explorer");
+            const cell = window.DASHBOARD_DATA.grid_cells.find(c => c.id === cellId);
+            if (cell && map && typeof L !== "undefined") {
+                map.setView([cell.lat, cell.lon], 13);
+                inspectCell(cell);
+            }
+        }
+
+        function resetMapExtent() {
+            if (!map || !window.DASHBOARD_DATA || !window.DASHBOARD_DATA.grid_cells || typeof L === "undefined") return;
+            const lats = window.DASHBOARD_DATA.grid_cells.map(c => c.lat);
+            const lons = window.DASHBOARD_DATA.grid_cells.map(c => c.lon);
+            map.fitBounds([
+                [Math.min(...lats), Math.min(...lons)],
+                [Math.max(...lats), Math.max(...lons)]
+            ], { padding: [20, 20] });
+        }
+
+        function searchGridCell(query) {
+            const q = query.trim().toUpperCase();
+            if (!q || !window.DASHBOARD_DATA) return;
+            const cell = window.DASHBOARD_DATA.grid_cells.find(c => c.id.toUpperCase().includes(q));
+            if (cell) inspectCell(cell);
+        }
+
+        // Live Simulation Recomputation
+        function recomputeLiveSimulation() {
+            const coolPct = parseInt(document.getElementById("rng-sim-cool").value) / 100;
+            const greenPct = parseInt(document.getElementById("rng-sim-green").value) / 100;
+            const treeDelta = parseInt(document.getElementById("rng-sim-trees").value) / 100;
+
+            document.getElementById("lbl-sim-cool").innerText = `${Math.round(coolPct * 100)}%`;
+            document.getElementById("lbl-sim-green").innerText = `${Math.round(greenPct * 100)}%`;
+            document.getElementById("lbl-sim-trees").innerText = `+${treeDelta.toFixed(2)} NDVI`;
+
+            // Dynamic recomputation across cells
+            const cells = window.DASHBOARD_DATA.grid_cells;
+            let sum_dlst = 0;
+            let sum_dair = 0;
+            let sum_cool = 0;
+            let sum_green = 0;
+            let sum_trees = 0;
+
+            cells.forEach(c => {
+                const d_cool = c.dLST_cool * coolPct;
+                const d_green = c.dLST_green * greenPct;
+                const d_trees = c.dLST_trees * (treeDelta / 0.15);
+                const sum_indiv = d_cool + d_green + d_trees;
+                // Non-linear thermodynamic saturation formula
+                const d_comb = 6.5 * (1.0 - Math.exp(-sum_indiv / (6.5 * 0.85)));
+                const d_air = d_comb * 0.32;
+
+                c.dynamic_dLST_comb = d_comb;
+                c.dynamic_dAir_comb = d_air;
+
+                sum_cool += d_cool;
+                sum_green += d_green;
+                sum_trees += d_trees;
+                sum_dlst += d_comb;
+                sum_dair += d_air;
+            });
+
+            const mean_dlst = sum_dlst / cells.length;
+            const mean_dair = sum_dair / cells.length;
+            const mean_cool = sum_cool / cells.length;
+            const mean_green = sum_green / cells.length;
+            const mean_trees = sum_trees / cells.length;
+
+            document.getElementById("sim-res-dlst").innerText = Math.abs(mean_dlst) < 0.005 ? "0.00 °C" : `-${mean_dlst.toFixed(2)} °C`;
+            document.getElementById("sim-res-dair").innerText = Math.abs(mean_dair) < 0.005 ? "0.00 °C" : `-${mean_dair.toFixed(2)} °C`;
+
+            // Update Simulation Breakdown Chart
+            if (simBreakdownChart) {
+                simBreakdownChart.data.datasets[0].data = [
+                    parseFloat(mean_cool.toFixed(2)),
+                    parseFloat(mean_green.toFixed(2)),
+                    parseFloat(mean_trees.toFixed(2)),
+                    parseFloat(mean_dlst.toFixed(2))
+                ];
+                simBreakdownChart.data.datasets[1].data = [
+                    parseFloat((mean_cool * 0.32).toFixed(2)),
+                    parseFloat((mean_green * 0.32).toFixed(2)),
+                    parseFloat((mean_trees * 0.32).toFixed(2)),
+                    parseFloat(mean_dair.toFixed(2))
+                ];
+                simBreakdownChart.update("none");
+            }
+
+            // Update inspected cell if one is open
+            if (currentlyInspectedCell) {
+                inspectCell(currentlyInspectedCell);
+            }
+
+            // If map is currently displaying Combined Cooling, re-render choropleth
+            const selLayer = document.getElementById("sel-map-layer");
+            if (selLayer && selLayer.value === "dLST_comb" && map) {
+                updateMapChoropleth();
+            }
+        }
+
+        // Scenario Presets Helper
+        function setSimulatorPreset(preset) {
+            const coolRng = document.getElementById("rng-sim-cool");
+            const greenRng = document.getElementById("rng-sim-green");
+            const treeRng = document.getElementById("rng-sim-trees");
+            if (!coolRng || !greenRng || !treeRng) return;
+
+            if (preset === 'zero') {
+                coolRng.value = 0;
+                greenRng.value = 0;
+                treeRng.value = 0;
+            } else if (preset === 'full') {
+                coolRng.value = 100;
+                greenRng.value = 100;
+                treeRng.value = 15;
+            } else if (preset === 'roofs') {
+                coolRng.value = 100;
+                greenRng.value = 100;
+                treeRng.value = 0;
+            } else if (preset === 'trees') {
+                coolRng.value = 0;
+                greenRng.value = 0;
+                treeRng.value = 15;
+            }
+            recomputeLiveSimulation();
+        }
+
+        // Presentation Slide Deck Logic
+        function changeSlide(delta) {
+            const nextIdx = activeSlideIndex + delta;
+            if (nextIdx < 1 || nextIdx > totalSlides) return;
+
+            document.getElementById(`slide-${activeSlideIndex}`).classList.remove("active");
+            activeSlideIndex = nextIdx;
+            document.getElementById(`slide-${activeSlideIndex}`).classList.add("active");
+
+            document.getElementById("slide-indicator").innerText = `Slide ${activeSlideIndex} of ${totalSlides}`;
+            document.getElementById("btn-prev-slide").disabled = activeSlideIndex === 1;
+            document.getElementById("btn-next-slide").disabled = activeSlideIndex === totalSlides;
+        }
+
+        // CSV Download Handlers
+        function downloadCSV(filename, csvContent) {
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function downloadHotspotsCSV() {
+            if (!window.DASHBOARD_DATA) return;
+            const top50 = window.DASHBOARD_DATA.top_hotspots;
+            const headers = "grid_id,zone,lon,lat,LST_baseline,building_density_pct,building_count,NDVI,UHVI,priority_tier,delta_LST_combined,delta_T_air_combined,policy_recommendation\n";
+            const rows = top50.map(c => `${c.id},${c.zone},${c.lon},${c.lat},${c.lst},${c.dens},${c.bld_count},${c.ndvi},${c.uhvi},"${c.tier}",${c.dLST_comb},${c.dAir_comb},"${c.policy}"`).join("\n");
+            downloadCSV("ahmedabad_priority_hotspots_top50.csv", headers + rows);
+        }
+
+        function downloadAllScenariosCSV() {
+            if (!window.DASHBOARD_DATA) return;
+            const cells = window.DASHBOARD_DATA.grid_cells;
+            const headers = "grid_id,zone,lon,lat,x_utm,y_utm,LST_baseline,building_density_pct,building_count,NDVI,NDBI,UHVI,priority_tier,delta_LST_cool_roofs,delta_LST_green_roofs,delta_LST_urban_trees,delta_LST_combined,delta_T_air_combined,policy_recommendation\n";
+            const rows = cells.map(c => `${c.id},${c.zone},${c.lon},${c.lat},${c.x_utm},${c.y_utm},${c.lst},${c.dens},${c.bld_count},${c.ndvi},${c.ndbi},${c.uhvi},"${c.tier}",${c.dLST_cool},${c.dLST_green},${c.dLST_trees},${c.dLST_comb},${c.dAir_comb},"${c.policy}"`).join("\n");
+            downloadCSV("ahmedabad_cooling_scenarios_all_cells.csv", headers + rows);
+        }
+
+        function downloadBenchmarksCSV() {
+            if (!window.DASHBOARD_DATA) return;
+            const b = window.DASHBOARD_DATA.benchmarks;
+            const pdeMap = {
+                "Mean Baseline": "N/A",
+                "Ridge Regression": "N/A",
+                "Random Forest": "N/A",
+                "Deep MLP (No PDE)": "0.962",
+                "Urban Heat PINN": "0.748"
+            };
+            const headers = "Model,Train_R2,Train_RMSE,Test_R2,Test_RMSE,Test_MAE,PDE_Residual_MSE\n";
+            const rows = b.map(m => `${m.Model},${m.Train_R2},${m.Train_RMSE},${m.Test_R2},${m.Test_RMSE},${m.Test_MAE},${pdeMap[m.Model] || 'N/A'}`).join("\n");
+            downloadCSV("ahmedabad_model_benchmarks.csv", headers + rows);
+        }
+    </script>
+</body>
+</html>
