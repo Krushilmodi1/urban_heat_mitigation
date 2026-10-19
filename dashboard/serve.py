@@ -29,10 +29,33 @@ class QuietHTTPHandler(http.server.SimpleHTTPRequestHandler):
         ".json": "application/json; charset=utf-8",
     }
 
+    def end_headers(self):
+        # Force cache-busting headers so browsers never serve stale HTML, JS, or JSON
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
+    def do_GET(self):
+        if self.path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+            return
+        log.info("HTTP GET: %s from %s", self.path, self.address_string())
+        try:
+            super().do_GET()
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            pass
+
     def log_message(self, format, *args):
         # Only log errors, suppress standard 200 GET logs
         if len(args) >= 2 and str(args[1]).startswith(("4", "5")):
             log.warning("%s - %s", self.address_string(), format % args)
+
+
+class ThreadingQuietServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
 
 
 def run_dashboard(port: int = 8000, open_browser: bool = True, blocking: bool = True):
@@ -53,11 +76,11 @@ def run_dashboard(port: int = 8000, open_browser: bool = True, blocking: bool = 
     actual_port = port
     for p in range(port, port + 20):
         try:
-            server = socketserver.TCPServer(("127.0.0.1", p), handler_factory)
+            server = ThreadingQuietServer(("127.0.0.1", p), handler_factory)
             actual_port = p
             break
-        except OSError as e:
-            if "already in use" in str(e).lower() or e.errno in (48, 98, 10048):
+        except (OSError, PermissionError) as e:
+            if "already in use" in str(e).lower() or getattr(e, 'errno', None) in (48, 98, 10048, 10013, 13) or getattr(e, 'winerror', None) in (10048, 10013):
                 continue
             raise
 

@@ -47,7 +47,62 @@ def build_dashboard_data():
                 "density_pct": float(r.get("footprint_density_pct", 0.0)),
             }
 
-    # 4. Prepare Metadata
+    # 4. Load Spatial Grid Multi-Year Metrics if available
+    yearly_metrics = {}
+    available_years = []
+    grid_years_map = {}
+    grid_csv = getattr(config, "GRID_CSV", os.path.join(config.PROCESSED_DIR, "spatial_grid_metrics.csv"))
+    if os.path.exists(grid_csv):
+        try:
+            df_grid = pd.read_csv(grid_csv)
+            if "year" in df_grid.columns and df_grid["year"].notna().any():
+                available_years = sorted([int(y) for y in df_grid["year"].dropna().unique().tolist()])
+                for _, r in df_grid.iterrows():
+                    gid = str(r["grid_id"])
+                    if gid not in grid_years_map:
+                        grid_years_map[gid] = {}
+                    if pd.notna(r.get("year")):
+                        y_val = str(int(r["year"]))
+                        grid_years_map[gid][y_val] = {
+                            "lst": round(float(r["LST"]), 2) if pd.notna(r.get("LST")) else None,
+                            "ndvi": round(float(r["NDVI"]), 3) if pd.notna(r.get("NDVI")) else None,
+                            "ndbi": round(float(r["NDBI"]), 3) if pd.notna(r.get("NDBI")) else None,
+                        }
+        except Exception as e:
+            log.warning("Could not load spatial grid CSV for multi-year metrics: %s", e)
+
+    # Load Annual LST Comparison metrics if available
+    annual_csv = os.path.join(config.PROCESSED_DIR, "annual_lst_comparison.csv")
+    if os.path.exists(annual_csv):
+        try:
+            df_ann = pd.read_csv(annual_csv)
+            for _, r in df_ann.iterrows():
+                yr = str(int(r["Year"]))
+                yearly_metrics[yr] = {
+                    "observed_months": int(r["observed_months"]),
+                    "mean_lst_all_observed": round(float(r["mean_LST_all_observed"]), 2),
+                    "mean_lst_common_months": round(float(r["mean_LST_common_months"]), 2),
+                    "hottest_month": f"{r['hottest_month']} ({round(float(r['hottest_LST']), 1)} °C)",
+                    "coolest_month": f"{r['coolest_month']} ({round(float(r['coolest_LST']), 1)} °C)",
+                    "has_scenarios": yr == "2025",
+                }
+        except Exception as e:
+            log.warning("Could not load annual LST comparison CSV: %s", e)
+
+    if not available_years:
+        available_years = [2025] if "2025" in yearly_metrics else [2024, 2025]
+
+    # Load Monthly LST Metrics if available
+    monthly_metrics = []
+    monthly_csv = getattr(config, "MONTHLY_CSV", os.path.join(config.PROCESSED_DIR, "monthly_lst_metrics.csv"))
+    if os.path.exists(monthly_csv):
+        try:
+            df_m = pd.read_csv(monthly_csv)
+            monthly_metrics = df_m.to_dict(orient="records")
+        except Exception as e:
+            log.warning("Could not load monthly LST metrics CSV: %s", e)
+
+    # 5. Prepare Metadata
     meta = {
         "title": "Ahmedabad Urban Heat Island Mitigation & PINN Modeling",
         "institution": "Urban Heat Mitigation Analytics Platform",
@@ -62,6 +117,20 @@ def build_dashboard_data():
         "min_lst": round(float(df_scen["LST_baseline"].min()), 2),
         "mean_bld_density_pct": round(float(df_scen["building_density"].mean() * 100), 2),
         "max_bld_density_pct": round(float(df_scen["building_density"].max() * 100), 2),
+        "available_years": available_years,
+        "yearly_metrics": yearly_metrics,
+        "day_night": {
+            "has_separate_night_data": False,
+            "available_periods": ["day"],
+            "active_period": "day",
+            "sensor": "USGS Landsat 8/9 Collection 2 Level-2 (OLI/TIRS)",
+            "orbit_overpass": "Daytime sun-synchronous (~10:30 AM local solar time)",
+            "explanation": (
+                "Existing project datasets contain daytime observations from USGS Landsat 8/9 only. "
+                "Separate nighttime thermal observations (e.g. MODIS Terra/Aqua MOD11A2/MYD11A2, VIIRS, or ECOSTRESS) "
+                "are not present in the current dataset repository."
+            ),
+        },
         "provenance": {
             "buildings": "Synthetic prototype (4,777 buildings in study area from D:\\395_buildings.csv)",
             "satellite": "Calibrated offline synthetic proxy (Earth Engine offline)",
@@ -70,7 +139,7 @@ def build_dashboard_data():
         },
     }
 
-    # 5. Scenarios Summary Statistics
+    # 6. Scenarios Summary Statistics
     scenarios_summary = {
         "cool_roofs": {
             "mean_lst": round(float(df_scen["delta_LST_cool_roofs"].mean()), 2),
@@ -102,11 +171,48 @@ def build_dashboard_data():
         },
     }
 
-    # 6. Grid Cells Array (Clean, minimal schema for client performance)
+    # 7. Grid Cells Array (Clean, minimal schema with per-year data for client performance)
     grid_cells = []
     for _, row in df_scen.iterrows():
+        gid = str(row["grid_id"])
+        cell_years = {}
+        if gid in grid_years_map:
+            for y_str, data_y in grid_years_map[gid].items():
+                cell_years[y_str] = {
+                    "year": int(y_str),
+                    "period": "day",
+                    "lst": data_y["lst"],
+                    "ndvi": data_y["ndvi"],
+                    "ndbi": data_y["ndbi"],
+                    "uhvi": round(float(row["UHVI"]), 4) if y_str == "2025" and "UHVI" in row and pd.notna(row["UHVI"]) else None,
+                    "tier": str(row["priority_tier"]) if y_str == "2025" and "priority_tier" in row and pd.notna(row["priority_tier"]) else None,
+                    "policy": str(row["policy_recommendation"]) if y_str == "2025" and "policy_recommendation" in row and pd.notna(row["policy_recommendation"]) else None,
+                    "dLST_cool": round(float(row["delta_LST_cool_roofs"]), 2) if y_str == "2025" and "delta_LST_cool_roofs" in row and pd.notna(row["delta_LST_cool_roofs"]) else None,
+                    "dLST_green": round(float(row["delta_LST_green_roofs"]), 2) if y_str == "2025" and "delta_LST_green_roofs" in row and pd.notna(row["delta_LST_green_roofs"]) else None,
+                    "dLST_trees": round(float(row["delta_LST_urban_trees"]), 2) if y_str == "2025" and "delta_LST_urban_trees" in row and pd.notna(row["delta_LST_urban_trees"]) else None,
+                    "dLST_comb": round(float(row["delta_LST_combined"]), 2) if y_str == "2025" and "delta_LST_combined" in row and pd.notna(row["delta_LST_combined"]) else None,
+                    "dAir_comb": round(float(row["delta_T_air_combined"]), 2) if y_str == "2025" and "delta_T_air_combined" in row and pd.notna(row["delta_T_air_combined"]) else None,
+                }
+        else:
+            # Fallback when grid CSV is not present
+            cell_years["2025"] = {
+                "year": 2025,
+                "period": "day",
+                "lst": round(float(row["LST_baseline"]), 2),
+                "ndvi": round(float(row["NDVI"]), 3) if pd.notna(row.get("NDVI")) else 0.15,
+                "ndbi": round(float(row["NDBI"]), 3) if pd.notna(row.get("NDBI")) else 0.0,
+                "uhvi": round(float(row["UHVI"]), 4) if pd.notna(row.get("UHVI")) else None,
+                "tier": str(row.get("priority_tier", "Tier 3: Moderate Priority")),
+                "policy": str(row.get("policy_recommendation", "")),
+                "dLST_cool": round(float(row.get("delta_LST_cool_roofs", 0.0)), 2),
+                "dLST_green": round(float(row.get("delta_LST_green_roofs", 0.0)), 2),
+                "dLST_trees": round(float(row.get("delta_LST_urban_trees", 0.0)), 2),
+                "dLST_comb": round(float(row.get("delta_LST_combined", 0.0)), 2),
+                "dAir_comb": round(float(row.get("delta_T_air_combined", 0.0)), 2),
+            }
+
         grid_cells.append({
-            "id": str(row["grid_id"]),
+            "id": gid,
             "zone": str(row.get("zone", "city")),
             "lon": round(float(row["lon"]), 5),
             "lat": round(float(row["lat"]), 5),
@@ -115,8 +221,8 @@ def build_dashboard_data():
             "lst": round(float(row["LST_baseline"]), 2),
             "dens": round(float(row["building_density"]) * 100, 2),  # in %
             "bld_count": int(row.get("building_count", 0)),
-            "ndvi": round(float(row["NDVI"]), 3),
-            "ndbi": round(float(row["NDBI"]), 3),
+            "ndvi": round(float(row["NDVI"]), 3) if pd.notna(row.get("NDVI")) else 0.15,
+            "ndbi": round(float(row["NDBI"]), 3) if pd.notna(row.get("NDBI")) else 0.0,
             "uhvi": round(float(row["UHVI"]), 4),
             "tier": str(row["priority_tier"]),
             "policy": str(row["policy_recommendation"]),
@@ -129,9 +235,10 @@ def build_dashboard_data():
                 round(float(row.get("delta_LST_combined_lower95", 0.0)), 2),
                 round(float(row.get("delta_LST_combined_upper95", row["delta_LST_combined"] + 0.78)), 2),
             ],
+            "years": cell_years,
         })
 
-    # 7. Priority Top Hotspots
+    # 8. Priority Top Hotspots
     top_hotspots = sorted(grid_cells, key=lambda c: c["uhvi"], reverse=True)[:50]
 
     bundle = {
@@ -140,6 +247,7 @@ def build_dashboard_data():
         "scenarios_summary": scenarios_summary,
         "grid_cells": grid_cells,
         "top_hotspots": top_hotspots,
+        "monthly_metrics": monthly_metrics,
     }
 
     # Export JS and JSON

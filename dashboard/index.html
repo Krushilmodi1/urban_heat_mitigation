@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Ahmedabad Urban Heat Mitigation | Research Dashboard</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -122,19 +125,6 @@
                 width: 100%;
                 padding-bottom: 4px;
             }
-        }
-
-        .nav-tab-btn.special-btn {
-            background: rgba(192, 132, 252, 0.15);
-            border-color: rgba(192, 132, 252, 0.4);
-            color: var(--accent-purple);
-        }
-        .nav-tab-btn.special-btn:hover {
-            background: rgba(192, 132, 252, 0.3);
-        }
-        .nav-tab-btn.special-btn.active {
-            background: #9333ea;
-            color: #fff;
         }
 
         /* Container & Sections */
@@ -459,55 +449,85 @@
             border-color: var(--border-highlight);
         }
 
-        /* Presentation Mode Deck */
-        .presentation-deck {
-            max-width: 900px;
-            margin: 0 auto;
+        /* Day / Night Toggle and Filter Controls */
+        .period-toggle-group {
+            display: flex;
+            gap: 0.4rem;
+            width: 100%;
+        }
+        .period-btn {
+            flex: 1;
+            padding: 0.42rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .period-btn.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
+        }
+        .period-btn.period-disabled {
+            opacity: 0.55;
+            background: rgba(30, 41, 59, 0.5);
+            border-color: rgba(71, 85, 105, 0.5);
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .period-btn.period-disabled:hover {
+            opacity: 0.9;
+            border-color: var(--accent-amber);
+            color: var(--accent-amber);
+        }
+        .period-subtext {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            line-height: 1.35;
+            margin-top: 2px;
+        }
+
+        /* Provenance and Night Unavailable Modal */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+        }
+        .modal-dialog {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 2.5rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            max-width: 560px;
+            width: 100%;
+            padding: 1.6rem;
+            box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.7);
+            animation: fadeIn 0.25s ease-out;
         }
-
-        .slide-step {
-            display: none;
-        }
-        .slide-step.active {
-            display: block;
-            animation: fadeIn 0.3s;
-        }
-
-        .slide-tag {
-            color: var(--accent-purple);
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 0.5rem;
-        }
-
-        .slide-title {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: #fff;
-            margin-bottom: 1.25rem;
-            line-height: 1.3;
-        }
-
-        .slide-body {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-            line-height: 1.7;
-        }
-
-        .slide-controls {
+        .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 1.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+        .modal-body {
+            margin-bottom: 1.25rem;
         }
 
         /* Leaflet Overrides */
@@ -595,7 +615,6 @@
             <button class="nav-tab-btn" onclick="switchTab('benchmarks')">ML & PINN Models</button>
             <button class="nav-tab-btn" onclick="switchTab('research')">Research & Provenance</button>
             <button class="nav-tab-btn" onclick="switchTab('downloads')">Data Exports</button>
-            <button class="nav-tab-btn special-btn" onclick="switchTab('presentation')">Presentation Deck 🎯</button>
         </nav>
     </header>
 
@@ -643,11 +662,11 @@
 
                 <div class="kpi-card">
                     <div class="kpi-header">
-                        Peak Hotspot Cooling
+                        Peak Surface ΔLST
                         <span class="kpi-badge badge-pinn">PINN PROJECTION</span>
                     </div>
                     <div class="kpi-value"><span id="kpi-peak-cooling">-0.88</span> <small style="font-size: 1rem;">°C</small></div>
-                    <div class="kpi-footer">Modeled prototype projection (Peak: E251_N2548 | Mean: -0.40 °C)</div>
+                    <div class="kpi-footer">Max modeled surface cooling ΔLST (Cell E251_N2548 | Domain mean ΔLST: -0.40 °C)</div>
                 </div>
 
                 <div class="kpi-card">
@@ -664,13 +683,13 @@
                 <div class="content-card">
                     <div class="card-title">Executive Research Summary</div>
                     <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
-                        This research formulates an urban heat island mitigation framework for the semi-arid metropolitan region of Ahmedabad, Gujarat. Using a 1 km × 1 km spatial discretization, the project integrates physical thermodynamic conservation laws into deep neural networks to project surface skin cooling (ΔLST) and near-surface air cooling (ΔT_air).
+                        This research formulates an urban heat island mitigation framework for the semi-arid metropolitan region of Ahmedabad, Gujarat. Using a 1 km × 1 km spatial discretization, the project incorporates a simplified 2D thermal PDE regularizer into neural networks to model surface skin cooling sensitivity (ΔLST) and near-surface air cooling estimates (ΔT_air).
                     </p>
                     <div style="background: var(--bg-secondary); border-radius: 6px; padding: 0.85rem; font-size: 0.825rem;">
                         <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 0.35rem;">Key Analytical Takeaways:</div>
                         <ul style="padding-left: 1.25rem; color: var(--text-secondary); line-height: 1.6;">
-                            <li><strong>Spatial Generalization:</strong> Evaluating on contiguous 8 km blocks reduces spatial autocorrelation leakage and provides a rigorous out-of-sample evaluation, revealing that tree ensembles overfit local coordinates (R² drops from 0.42 to 0.03).</li>
-                            <li><strong>PINN Regularization:</strong> The physics loss (λ_pde = 0.1) acts as a physical regularizer, cutting PDE energy residual by 22.2% (from 0.962 down to 0.748) while maintaining 0.32 °C MAE.</li>
+                            <li><strong>Spatial Generalization:</strong> Evaluating on contiguous 8 km blocks prevents spatial adjacency leakage and provides a rigorous out-of-sample evaluation, revealing a substantial generalization gap for tree ensembles under spatial block holdouts (test R² drops to 0.034 despite high training fit).</li>
+                            <li><strong>PINN Regularization:</strong> The physics loss (λ_pde = 0.1) acts as a numerical regularizer, reducing the formulated 2D thermal PDE residual MSE by 22.2% (from 0.962 down to 0.748) while maintaining 0.32 °C MAE.</li>
                             <li><strong>Canopy Decoupling:</strong> Pedestrian 2m air cooling is attenuated relative to radiometric rooftop skin cooling (ΔT_air ≈ 0.32 × ΔLST).</li>
                             <li><strong>Spatial Prioritization:</strong> Multi-Criteria UHVI balances thermal hazard (40%), structural footprint (40%), and vegetative deficit (20%) using empirical rank percentiles.</li>
                         </ul>
@@ -693,19 +712,45 @@
                 <!-- Sidebar Controls -->
                 <div class="explorer-sidebar">
                     <div class="filter-group">
+                        <label>Observation Year</label>
+                        <select id="sel-year-filter" class="select-input" onchange="applyAllFilters()">
+                            <option value="all">All Available Years (2024 &amp; 2025 Synthetic Proxies)</option>
+                            <option value="2025" selected>2025 (Calibrated Synthetic Proxy Baseline)</option>
+                            <option value="2024">2024 (10-Month Calibrated Synthetic Proxy)</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>Observation Period</span>
+                            <span style="font-size:0.68rem; color:var(--accent-blue); cursor:pointer; text-transform:none;" onclick="showNightUnavailableModal()">ℹ️ Provenance</span>
+                        </label>
+                        <div class="period-toggle-group">
+                            <button type="button" id="btn-period-day" class="period-btn active" onclick="setObservationPeriod('day')">
+                                ☀️ Daytime Proxy (Calibrated Prototype)
+                            </button>
+                            <button type="button" id="btn-period-night" class="period-btn period-disabled" onclick="showNightUnavailableModal()">
+                                🌙 Nighttime (Unavailable in Proxy Repo)
+                            </button>
+                        </div>
+                        <div class="period-subtext">Calibrated daytime prototype proxies (~10:30 AM solar time). Nighttime thermal observations are unavailable in repository.</div>
+                    </div>
+
+                    <div class="filter-group">
                         <label>Active Display Layer</label>
-                        <select id="sel-map-layer" class="select-input" onchange="updateMapChoropleth()">
+                        <select id="sel-map-layer" class="select-input" onchange="applyAllFilters()">
                             <option value="uhvi">Urban Heat Vulnerability (UHVI)</option>
-                            <option value="lst">Baseline LST (°C)</option>
-                            <option value="dens">Building Density (%)</option>
+                            <option value="lst">Land Surface Temperature (LST °C)</option>
                             <option value="ndvi">Vegetation Index (NDVI)</option>
+                            <option value="ndbi">Built-Up Index (NDBI)</option>
+                            <option value="dens">Building Density (%)</option>
                             <option value="dLST_comb">Combined Cooling (ΔLST °C)</option>
                         </select>
                     </div>
 
                     <div class="filter-group">
                         <label>Priority Tier Filter</label>
-                        <select id="sel-tier-filter" class="select-input" onchange="applyGridFilters()">
+                        <select id="sel-tier-filter" class="select-input" onchange="applyAllFilters()">
                             <option value="all">All Priority Tiers</option>
                             <option value="Tier 1">Tier 1: Critical Heat Hotspots</option>
                             <option value="Tier 2">Tier 2: High Priority Action</option>
@@ -716,6 +761,7 @@
                     <div class="filter-group">
                         <label>Search Cell ID</label>
                         <input type="text" id="inp-search-cell" class="text-input" placeholder="e.g. E250_N2547" oninput="searchGridCell(this.value)"/>
+                        <div id="search-feedback" style="font-size:0.7rem; color:var(--accent-amber); margin-top:3px; display:none;"></div>
                     </div>
 
                     <button class="btn btn-outline" style="width: 100%; font-size: 0.75rem; padding: 0.35rem 0.5rem;" onclick="resetMapExtent()">Reset Extent (Fit Study Grid)</button>
@@ -726,25 +772,30 @@
                             <span id="insp-id">Cell Inspector</span>
                             <span id="insp-tier" style="font-size: 0.7rem; padding: 2px 5px; border-radius: 3px; background: rgba(56, 189, 248, 0.2); color: var(--accent-blue);">Select Cell</span>
                         </div>
+                        <div class="inspector-row"><span class="inspector-label">Location (Lon, Lat):</span><span class="inspector-val" id="insp-coords">-</span></div>
+                        <div class="inspector-row"><span class="inspector-label">Active Filter:</span><span class="inspector-val" id="insp-year-period" style="color: var(--accent-blue); font-size: 0.72rem;">2025 | Day</span></div>
                         <div class="inspector-row"><span class="inspector-label">Zone:</span><span class="inspector-val" id="insp-zone">-</span></div>
-                        <div class="inspector-row"><span class="inspector-label">Baseline LST:</span><span class="inspector-val" id="insp-lst">-</span></div>
+                        <div class="inspector-row"><span class="inspector-label">Surface Temp (LST):</span><span class="inspector-val" id="insp-lst">-</span></div>
                         <div class="inspector-row"><span class="inspector-label">Building Density:</span><span class="inspector-val" id="insp-dens">-</span></div>
                         <div class="inspector-row"><span class="inspector-label">Building Count:</span><span class="inspector-val" id="insp-bldgs">-</span></div>
                         <div class="inspector-row"><span class="inspector-label">Vegetation (NDVI):</span><span class="inspector-val" id="insp-ndvi">-</span></div>
+                        <div class="inspector-row"><span class="inspector-label">Built-Up Index (NDBI):</span><span class="inspector-val" id="insp-ndbi">-</span></div>
                         <div class="inspector-row"><span class="inspector-label">UHVI Score:</span><span class="inspector-val" id="insp-uhvi" style="color: var(--accent-amber);">-</span></div>
                         <div class="inspector-row"><span class="inspector-label">Target Policy:</span><span class="inspector-val" id="insp-policy" style="color: var(--accent-green); font-size: 0.75rem;">-</span></div>
-                        <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);">
+                        <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);" id="insp-scenarios-section">
                             <div style="font-weight: 700; color: var(--text-secondary); font-size: 0.725rem; margin-bottom: 0.25rem;">PROJECTED COUNTERFACTUAL COOLING:</div>
                             <div class="inspector-row"><span class="inspector-label">Surface Skin (ΔLST):</span><span class="inspector-val" id="insp-dlst" style="color: var(--accent-blue);">-</span></div>
                             <div class="inspector-row"><span class="inspector-label">Ambient Air (ΔT_air):</span><span class="inspector-val" id="insp-dair" style="color: var(--accent-green);">-</span></div>
-                            <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px; line-height: 1.3;"><i>Modeled counterfactual scenario projection; does not represent a statistical sampling confidence interval.</i></div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px; line-height: 1.3;" id="insp-scenario-subnote"><i>Modeled counterfactual scenario projection (2025 baseline).</i></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Leaflet Map Container -->
-                <div class="explorer-map-container">
+                <div class="explorer-map-container" style="position: relative;">
                     <div id="map-tile-alert" style="display:none; position:absolute; top:10px; right:10px; z-index:1000; background:rgba(15,23,42,0.92); border:1px solid var(--border-color); color:var(--text-secondary); font-size:0.75rem; padding:6px 12px; border-radius:4px; max-width:320px; line-height:1.4; box-shadow:0 4px 12px rgba(0,0,0,0.5);">Offline Mode: Basemap raster tiles unavailable. Local vector grid cells and hotspots rendered directly over coordinates.</div>
+                    <div id="map-filter-indicator" style="position:absolute; top:12px; left:60px; z-index:1000; background:rgba(15,23,42,0.88); border:1px solid var(--border-color); color:var(--text-primary); font-size:0.72rem; padding:4px 10px; border-radius:6px; box-shadow:0 4px 10px rgba(0,0,0,0.5); backdrop-filter:blur(4px); pointer-events:none;">Active: <strong id="map-filter-label" style="color:var(--accent-blue);">2025 | Day | UHVI Layer</strong></div>
+                    <div id="map-year-notice" style="display:none; position:absolute; bottom:25px; left:12px; z-index:1000; background:rgba(30,41,59,0.95); border:1px solid var(--accent-amber); color:#fef08a; font-size:0.72rem; padding:6px 10px; border-radius:6px; max-width:340px; line-height:1.35; box-shadow:0 6px 15px rgba(0,0,0,0.6);"></div>
                     <div id="map-leaflet"></div>
                 </div>
             </div>
@@ -825,16 +876,16 @@
                         <div style="font-weight: 700; font-size: 0.8rem; color: var(--accent-blue); margin-bottom: 0.5rem;">RECOMPUTED DOMAIN COOLING PROJECTION (MODELED SYNTHETIC PROTOTYPE):</div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; text-align: center;">
                             <div style="background: rgba(15, 23, 42, 0.6); padding: 0.5rem; border-radius: 4px;">
-                                <div style="font-size: 0.7rem; color: var(--text-secondary);">Mean Skin Cooling (ΔLST)</div>
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">Mean Surface ΔLST (Skin)</div>
                                 <div style="font-size: 1.4rem; font-weight: 700; color: var(--accent-blue);" id="sim-res-dlst">-0.40 °C</div>
                             </div>
                             <div style="background: rgba(15, 23, 42, 0.6); padding: 0.5rem; border-radius: 4px;">
-                                <div style="font-size: 0.7rem; color: var(--text-secondary);">Mean Air Cooling (ΔT_air)</div>
+                                <div style="font-size: 0.7rem; color: var(--text-secondary);">Mean Canopy ΔT_air (Air)</div>
                                 <div style="font-size: 1.4rem; font-weight: 700; color: var(--accent-green);" id="sim-res-dair">-0.13 °C</div>
                             </div>
                         </div>
                         <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem; text-align: center; line-height: 1.35;">
-                            Modeled counterfactual projections under the synthetic prototype dataset (not measured Ahmedabad cooling outcomes). Negative ΔLST denotes cooling relative to baseline. Zero policy yields 0.00 °C; default full policy yields -0.40 °C domain average (peak -0.88 °C in cell E251_N2548). Saturated response ceiling: 6.5 °C.
+                            Modeled counterfactual projections under the synthetic prototype dataset (not measured Ahmedabad cooling outcomes). Signed negative values denote cooling relative to baseline (ΔLST = T_scenario − T_baseline). Zero policy yields 0.00 °C; default full policy yields -0.40 °C domain average (peak -0.88 °C in cell E251_N2548). Saturated response ceiling: 6.5 °C.
                         </div>
                     </div>
                 </div>
@@ -891,23 +942,26 @@
                 <div class="card-title">Physics-Informed Regularization Deep-Dive</div>
                 <div class="grid-2col">
                     <div>
-                        <h4 style="font-size: 0.9rem; color: var(--accent-blue); margin-bottom: 0.4rem;">Energy Conservation PDE Residual Loss:</h4>
+                        <h4 style="font-size: 0.9rem; color: var(--accent-blue); margin-bottom: 0.4rem;">Thermal Advection-Diffusion PDE Regularizer (Simplified Diffusion-Reaction Formulation):</h4>
                         <p style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.5rem;">
-                            The PINN optimizes a composite loss balancing empirical observation with thermodynamic conservation laws:
+                            The PINN optimizes a composite loss combining empirical data fidelity with a simplified thermal PDE regularization residual:
                         </p>
                         <div class="formula-box">
                             L_total = L_data + λ_pde · L_pde &nbsp;&nbsp;(λ_pde = 0.1)
                         </div>
                         <p style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.5rem;">
-                            The steady-state 2D thermal conduction-advection-source differential operator penalizes non-physical gradient spikes across space:
+                            The steady-state 2D diffusion-reaction thermal balance operator penalizes non-physical spatial gradient discontinuities:
                         </p>
                         <div class="formula-box">
-                            f_pde = u·(∂T/∂x) + v·(∂T/∂y) - α·∇²T - S(x, y) / (ρ · c_p · h)
+                            f_pde = α·∇²T + S(NDVI, NDBI, density) - β·T = 0
+                        </div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace; margin: 0.2rem 0 0.5rem 0;">
+                            where ∇²T = ∂²T/∂x² + ∂²T/∂y², &nbsp; S = γ_bld·density + γ_ndbi·NDBI + γ_ndvi·NDVI
                         </div>
                         <p style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.6;">
-                            <strong>Why the PINN has lower R² (0.014 vs 0.056 for Ridge):</strong> The physics loss acts strictly as a <em>regularizer</em>. It penalizes non-physical gradient spikes across unobserved spatial regimes, slightly reducing statistical curve-fitting flexibility while driving the thermal PDE residual MSE down from <strong>0.962 to 0.748 (22.2% reduction)</strong>.
+                            <strong>Why the PINN has lower R² (0.014 vs 0.056 for Ridge):</strong> The physics loss acts strictly as a <em>numerical regularizer</em>. It penalizes non-physical spatial gradient spikes, trading off empirical training-set curve-fitting flexibility to reduce the formulated thermal PDE residual MSE from <strong>0.962 down to 0.748 (22.2% reduction)</strong>.
                             <br/><br/>
-                            <i>Note: A 22.2% reduction in the implemented PDE residual reflects numerical regularization under the formulated 2D steady-state heat equation; it does not demonstrate real-world physical validity in the absence of empirical satellite ground-truth observations.</i>
+                            <i>Note: A 22.2% reduction in the implemented PDE residual reflects numerical regularization under the formulated 2D steady-state heat equation; it does not establish thermodynamic conservation, prove a physical heat-transfer model, or demonstrate real-world cooling efficacy without empirical microclimate ground truth.</i>
                         </p>
                     </div>
                     <div style="background: var(--bg-secondary); border-radius: 6px; padding: 1.25rem; font-size: 0.825rem;">
@@ -1036,118 +1090,61 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 7: PRESENTATION DECK ==================== -->
-        <section id="tab-presentation" class="section-view">
-            <div class="presentation-deck">
-                <!-- Slide 1 -->
-                <div class="slide-step active" id="slide-1">
-                    <div class="slide-tag">Slide 1 of 5 | Problem Definition</div>
-                    <div class="slide-title">Urban Heat Island (UHI) Challenge in Ahmedabad</div>
-                    <div class="slide-body">
-                        Ahmedabad faces extreme summer heat hazards exceeding 45 °C ambient temperatures. Rapid urbanization and dense built-up surfaces amplify radiometric Land Surface Temperatures (LST).
-                        <br/><br/>
-                        <strong>Core Research Question:</strong> Can physics-informed deep learning predict localized urban cooling potentials while respecting fundamental thermodynamic energy conservation laws, and how does it compare to empirical statistical baselines under strict spatial holdout validation?
+        <!-- Nighttime Satellite Data Modal -->
+        <div id="modal-night-info" class="modal-backdrop" style="display:none;" onclick="if(event.target===this) hideNightUnavailableModal()">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:1.3rem;">🌙</span>
+                        <span style="font-weight:700; font-size:1.05rem; color:#fff;">Nighttime Satellite Observations Unavailable</span>
                     </div>
+                    <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.8rem;" onclick="hideNightUnavailableModal()">✕</button>
                 </div>
-
-                <!-- Slide 2 -->
-                <div class="slide-step" id="slide-2">
-                    <div class="slide-tag">Slide 2 of 5 | Scientific Integrity</div>
-                    <div class="slide-title">Transparent Data Provenance & Prototype Scope</div>
-                    <div class="slide-body">
-                        In accordance with research standards, this project explicitly documents data provenance:
-                        <br/><br/>
-                        <ul>
-                            <li><strong>Building Footprints:</strong> Evaluated on 4,777 buildings inside the study area parsed from <code>D:\395_buildings.csv</code> (schema-compliant prototype matching Google Open Buildings format).</li>
-                            <li><strong>Satellite Variables:</strong> In offline mode, LST, NDVI, and NDBI are calibrated synthetic proxies with controlled Gaussian thermal noise (σ = 0.35 °C).</li>
-                            <li><strong>Boundary:</strong> The municipal boundary is an ellipsoidal geometric approximation (~462 km²).</li>
-                        </ul>
-                        <br/>
-                        All outputs represent counterfactual sensitivity projections under the prototype data-generating process, rather than validated real-world Ahmedabad satellite observations.
+                <div class="modal-body">
+                    <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 6px; padding: 0.75rem 0.9rem; margin-bottom: 0.85rem; font-size: 0.8rem; color: #fca5a5; line-height: 1.45;">
+                        <strong>Scientific Integrity Protocol:</strong> Nighttime thermal observations cannot be synthesized, modeled, or proxy-extrapolated from daytime observations without fabricating scientific results.
                     </div>
+                    <p style="font-size: 0.825rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.85rem;">
+                        The existing project data pipeline is based strictly on <strong>USGS Landsat 8 and Landsat 9 Collection 2 Level-2</strong> (sensors OLI/TIRS). Landsat operates in a sun-synchronous daytime orbit passing over Ahmedabad at approximately <strong>10:30 AM local solar time</strong>. Consequently, all observed LST and radiometric indices (NDVI, NDBI) in this repository are daytime observations.
+                    </p>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 0.4rem;">Required Datasets to Support Nighttime UHI Analysis:</div>
+                    <ul style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; padding-left: 1.25rem; margin-bottom: 1rem;">
+                        <li><strong>Nocturnal Satellite Products:</strong> MODIS Terra (MOD11A2, ~10:30 PM local time), MODIS Aqua (MYD11A2, ~1:30 AM local time), VIIRS nocturnal products (VNP21), or ECOSTRESS nighttime acquisitions.</li>
+                        <li><strong>Processed Rasters:</strong> Grid rasters (e.g. <code>grid_landsat_night_2024_1000m.tif</code> or <code>grid_modis_night_1000m.tif</code>) aligned to the 1,000 m UTM 43N grid.</li>
+                        <li><strong>Tabular Columns:</strong> Dedicated nighttime surface temperature variables (e.g. <code>LST_night</code>) joined into <code>data/processed/spatial_grid_metrics.csv</code>.</li>
+                    </ul>
                 </div>
-
-                <!-- Slide 3 -->
-                <div class="slide-step" id="slide-3">
-                    <div class="slide-tag">Slide 3 of 5 | Spatial Machine Learning</div>
-                    <div class="slide-title">Mitigating Spatial Autocorrelation Leakage</div>
-                    <div class="slide-body">
-                        Traditional random k-fold cross-validation suffers from severe spatial autocorrelation leakage (Tobler's First Law), creating inflated, misleading R² scores.
-                        <br/><br/>
-                        To mitigate spatial leakage and evaluate out-of-sample geographic generalization, we partitioned the domain into <strong>contiguous 8.0 km spatial blocks</strong>, holding out 780 cells (23.5% of the domain across 10 held-out blocks vs. 28 training blocks). While zero coordinate overlap prevents direct sample re-use, spatial autocorrelation across block boundaries can still persist.
-                        <br/><br/>
-                        <strong>Key Findings:</strong>
-                        <ul>
-                            <li>Random Forest collapsed from train R² = 0.42 to test R² = 0.03, demonstrating that tree models heavily memorize spatial coordinates rather than generalizing across held-out geographic regimes.</li>
-                            <li>Total target variation is narrow (σ = 0.41 °C) and contains injected synthetic Gaussian perturbation (nominal σ = 0.35 °C). Combined with sparse prototype building footprints (mean 0.08%) and strict 8 km geographic block evaluation, this high noise-to-signal ratio limits explainable out-of-sample R² scores (0.01 – 0.06) across all model families, while maintaining small absolute errors (RMSE ≈ 0.40 °C, MAE ≈ 0.32 °C).</li>
-                            <li>Residual Moran's I = -0.006 (p = 0.44) does not detect significant residual spatial autocorrelation under inverse-distance weighting at this scale; however, failing to reject spatial randomness does not mathematically prove independence across all spatial processes or scales.</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Slide 4 -->
-                <div class="slide-step" id="slide-4">
-                    <div class="slide-tag">Slide 4 of 5 | PINN Physics Constraint</div>
-                    <div class="slide-title">The Role of the Physics Regularization Loss</div>
-                    <div class="slide-body">
-                        The Physics-Informed Neural Network incorporates the steady-state 2D thermal conduction-advection PDE into its loss function (λ_pde = 0.1).
-                        <br/><br/>
-                        <strong>Does the PINN outperform Ridge in statistical R²?</strong> No. Ridge Regression achieves the best statistical holdout fit with test R² = 0.056 (RMSE 0.396 °C), while the PINN achieves test R² = 0.014 (RMSE 0.405 °C), trading minor statistical fit for derivative constraint.
-                        <br/><br/>
-                        <strong>What is the actual contribution of the physics loss?</strong> The PDE energy loss acts as a <em>derivative regularizer</em>. It reduced thermal PDE residual MSE by <strong>22.2%</strong> (from 0.962 down to 0.748), penalizing unphysical spatial fluctuations without degrading holdout test error (MAE 0.32 °C). The 22.2% reduction in the implemented PDE residual reflects regularization under the simplified 2D energy equation, but does not establish real-world physical validity in the absence of measured satellite ground truth.
-                    </div>
-                </div>
-
-                <!-- Slide 5 -->
-                <div class="slide-step" id="slide-5">
-                    <div class="slide-tag">Slide 5 of 5 | Urban Policy Planning</div>
-                    <div class="slide-title">Targeted Mitigation & Hotspot Prioritization</div>
-                    <div class="slide-body">
-                        We developed the <strong>Urban Heat Vulnerability Index (UHVI)</strong> combining Thermal Severity (40%), Building Density (40%), and Vegetative Deficit (20%) using empirical rank percentiles.
-                        <br/><br/>
-                        <strong>Modeled Cooling Projections across Synthetic Domain (n = 1,661 Cells):</strong>
-                        <ul>
-                            <li><strong>Cool Roofs:</strong> Peak localized cooling of -0.19 °C in dense clusters (domain mean ~0.00 °C due to 0.08% average building coverage).</li>
-                            <li><strong>Urban Trees:</strong> City-wide mean cooling of -0.35 °C (peak -0.44 °C).</li>
-                            <li><strong>Combined Strategy:</strong> -0.40 °C domain mean skin cooling (up to -0.88 °C peak in dense cell E251_N2548), translating to -0.13 °C domain mean pedestrian air cooling (up to -0.28 °C peak).</li>
-                        </ul>
-                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.75rem;">
-                            <i>Note: Negative ΔLST denotes cooling relative to baseline (ΔLST = LST_scenario - LST_baseline). All figures reflect modeled counterfactual sensitivity projections under the synthetic prototype dataset, not measured Ahmedabad cooling outcomes.</i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Presentation Slide Navigation Controls -->
-                <div class="slide-controls">
-                    <button class="btn btn-outline" id="btn-prev-slide" onclick="changeSlide(-1)">← Previous</button>
-                    <span style="font-size: 0.85rem; color: var(--text-muted);" id="slide-indicator">Slide 1 of 5</span>
-                    <button class="btn" id="btn-next-slide" onclick="changeSlide(1)">Next Slide →</button>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Current Active Mode: <strong>☀️ Day (Landsat ~10:30 AM)</strong></span>
+                    <button class="btn" style="padding: 0.4rem 1.1rem; font-size: 0.8rem;" onclick="hideNightUnavailableModal()">Understood</button>
                 </div>
             </div>
-        </section>
+        </div>
 
     </main>
 
     <!-- Load Dashboard Data -->
-    <script src="data.js"></script>
+    <script src="data.js?v=20261018"></script>
 
     <!-- Dashboard App Logic -->
     <script>
         let map = null;
         let mapLayerGroup = null;
         let markersGroup = null;
-        let activeSlideIndex = 1;
-        const totalSlides = 5;
+        let highlightLayerGroup = null;
+        let currentSelectedYear = "2025";
+        let currentSelectedPeriod = "day";
+        let currentSelectedLayer = "uhvi";
         let simBreakdownChart = null;
         let currentlyInspectedCell = null;
 
         // Initialize on load
         window.addEventListener("DOMContentLoaded", () => {
-            initKPIs();
+            initKPIs(currentSelectedYear);
             initOverviewChart();
             initModelCharts();
             initSimulationChart();
-            initHotspotsTable();
+            initHotspotsTable("all", currentSelectedYear);
             initBenchmarksTable();
             initLeafletMap();
         });
@@ -1162,7 +1159,7 @@
 
             // Highlight button
             const buttons = document.querySelectorAll(".nav-tab-btn");
-            const mapNames = ["overview", "explorer", "simulator", "benchmarks", "research", "downloads", "presentation"];
+            const mapNames = ["overview", "explorer", "simulator", "benchmarks", "research", "downloads"];
             const idx = mapNames.indexOf(tabId);
             if (idx >= 0 && buttons[idx]) buttons[idx].classList.add("active");
 
@@ -1177,14 +1174,33 @@
             }
         }
 
-        // Initialize KPIs
-        function initKPIs() {
+        // Initialize KPIs with Year Support
+        function initKPIs(selectedYear = null) {
             if (!window.DASHBOARD_DATA) return;
             const meta = window.DASHBOARD_DATA.meta;
+            const yr = selectedYear || currentSelectedYear || "2025";
+            const yearly = meta.yearly_metrics || {};
+
             document.getElementById("kpi-cells").innerText = meta.total_cells.toLocaleString();
             document.getElementById("kpi-bldgs").innerText = meta.total_buildings.toLocaleString();
-            document.getElementById("kpi-mean-lst").innerText = meta.mean_lst;
-            document.getElementById("kpi-peak-cooling").innerText = "-" + window.DASHBOARD_DATA.scenarios_summary.combined.max_lst;
+
+            const meanLstEl = document.getElementById("kpi-mean-lst");
+            const peakCoolEl = document.getElementById("kpi-peak-cooling");
+
+            if (yr === "2024" && yearly["2024"]) {
+                if (meanLstEl) meanLstEl.innerText = yearly["2024"].mean_lst_all_observed.toFixed(2);
+                if (peakCoolEl) peakCoolEl.innerText = "N/A";
+            } else if (yr === "2025" && yearly["2025"]) {
+                if (meanLstEl) meanLstEl.innerText = meta.mean_lst.toFixed(2);
+                if (peakCoolEl) peakCoolEl.innerText = "-" + window.DASHBOARD_DATA.scenarios_summary.combined.max_lst;
+            } else if (yr === "all" && yearly["2024"] && yearly["2025"]) {
+                const combinedMean = ((yearly["2024"].mean_lst_all_observed + yearly["2025"].mean_lst_all_observed) / 2).toFixed(2);
+                if (meanLstEl) meanLstEl.innerText = combinedMean;
+                if (peakCoolEl) peakCoolEl.innerText = "-" + window.DASHBOARD_DATA.scenarios_summary.combined.max_lst;
+            } else {
+                if (meanLstEl) meanLstEl.innerText = meta.mean_lst.toFixed(2);
+                if (peakCoolEl) peakCoolEl.innerText = "-" + window.DASHBOARD_DATA.scenarios_summary.combined.max_lst;
+            }
         }
 
         // Initialize Overview Chart
@@ -1215,11 +1231,19 @@
                 options: {
                     responsive: true,
                     plugins: {
-                        legend: { labels: { color: "#94a3b8", font: { size: 11 } } }
+                        legend: { labels: { color: "#94a3b8", font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.parsed.y.toFixed(2);
+                                    return `${context.dataset.label}: ${val} °C (Δ = -${val} °C)`;
+                                }
+                            }
+                        }
                     },
                     scales: {
                         x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
-                        y: { ticks: { color: "#94a3b8" }, grid: { color: "#334155" }, title: { display: true, text: "Cooling Effect (°C)", color: "#94a3b8" } }
+                        y: { ticks: { color: "#94a3b8" }, grid: { color: "#334155" }, title: { display: true, text: "Cooling Magnitude (°C, magnitude = −ΔLST)", color: "#94a3b8" }, min: 0 }
                     }
                 }
             });
@@ -1257,14 +1281,15 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ": -" + context.parsed.y.toFixed(2) + " °C";
+                                    const val = context.parsed.y.toFixed(2);
+                                    return `${context.dataset.label}: ${val} °C (Δ = -${val} °C)`;
                                 }
                             }
                         }
                     },
                     scales: {
                         x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
-                        y: { ticks: { color: "#94a3b8" }, grid: { color: "#334155" }, title: { display: true, text: "Mean Cooling (°C)", color: "#94a3b8" }, min: 0 }
+                        y: { ticks: { color: "#94a3b8" }, grid: { color: "#334155" }, title: { display: true, text: "Cooling Magnitude (°C, magnitude = −ΔLST)", color: "#94a3b8" }, min: 0 }
                     }
                 }
             });
@@ -1294,7 +1319,18 @@
                     },
                     options: {
                         responsive: true,
-                        plugins: { legend: { display: false } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        if (context.label === "Mean Baseline") {
+                                            return "(R² = 0.000 by mathematical definition of baseline mean predictor)";
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         scales: {
                             x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { display: false } },
                             y: { ticks: { color: "#94a3b8" }, grid: { color: "#334155" }, min: 0, max: 0.10 }
@@ -1336,38 +1372,60 @@
             }
         }
 
-        // Initialize Hotspots Table with optional Priority Tier Filter
-        function initHotspotsTable(tierFilter = "all") {
+        // Initialize Hotspots Table with optional Priority Tier and Year Filter
+        function initHotspotsTable(tierFilter = "all", selectedYear = null) {
             const tbody = document.getElementById("hotspots-table-body");
             if (!tbody || !window.DASHBOARD_DATA) return;
-            let cells = window.DASHBOARD_DATA.top_hotspots;
+            const yr = selectedYear || currentSelectedYear || "2025";
+            let cells = [...window.DASHBOARD_DATA.grid_cells];
+
             if (tierFilter && tierFilter !== "all") {
                 cells = cells.filter(c => c.tier.includes(tierFilter));
             }
+
+            if (yr === "2024") {
+                // For 2024, rank by observed LST
+                cells.sort((a, b) => {
+                    const lstA = a.years?.["2024"]?.lst ?? a.lst;
+                    const lstB = b.years?.["2024"]?.lst ?? b.lst;
+                    return lstB - lstA;
+                });
+            } else {
+                // For 2025 and All Years, rank by UHVI
+                cells.sort((a, b) => b.uhvi - a.uhvi);
+            }
+
             const topRows = cells.slice(0, 15);
 
-            tbody.innerHTML = topRows.map((c, idx) => `
+            tbody.innerHTML = topRows.map((c, idx) => {
+                const cellLST = yr === "2024" ? (c.years?.["2024"]?.lst ?? c.lst) : (yr === "2025" ? (c.years?.["2025"]?.lst ?? c.lst) : (((c.years?.["2024"]?.lst ?? c.lst) + (c.years?.["2025"]?.lst ?? c.lst)) / 2).toFixed(2));
+                const cellNDVI = yr === "2024" ? (c.years?.["2024"]?.ndvi ?? c.ndvi) : (yr === "2025" ? (c.years?.["2025"]?.ndvi ?? c.ndvi) : (((c.years?.["2024"]?.ndvi ?? c.ndvi) + (c.years?.["2025"]?.ndvi ?? c.ndvi)) / 2).toFixed(3));
+                const cellUHVI = yr === "2024" ? `<span style="color:var(--text-muted); font-size:0.75rem;">N/A (2025 model)</span>` : `<strong style="color: var(--accent-amber);">${c.uhvi}</strong>`;
+                const cellDLST = yr === "2024" ? `<span style="color:var(--text-muted); font-size:0.75rem;">N/A</span>` : `<strong style="color: var(--accent-blue);">-${c.dLST_comb} °C</strong>`;
+                const cellDAir = yr === "2024" ? `<span style="color:var(--text-muted); font-size:0.75rem;">N/A</span>` : `<strong style="color: var(--accent-green);">-${c.dAir_comb} °C</strong>`;
+                const cellPolicy = yr === "2024" ? `<span style="color:var(--text-muted); font-size:0.72rem;">N/A (2025 baseline)</span>` : c.policy;
+                const tierBadge = yr === "2024" ? `Observed '24` : c.tier.split(":")[0];
+
+                return `
                 <tr>
                     <td><strong>#${idx + 1}</strong></td>
                     <td><code>${c.id}</code></td>
-                    <td><span class="kpi-badge badge-synthetic">${c.tier.split(":")[0]}</span></td>
-                    <td>${c.lst} °C</td>
+                    <td><span class="kpi-badge badge-synthetic">${tierBadge}</span></td>
+                    <td>${cellLST} °C</td>
                     <td>${c.dens}% (${c.bld_count})</td>
-                    <td>${c.ndvi}</td>
-                    <td><strong style="color: var(--accent-amber);">${c.uhvi}</strong></td>
-                    <td style="color: var(--accent-blue);"><strong>-${c.dLST_comb} °C</strong></td>
-                    <td style="color: var(--accent-green);"><strong>-${c.dAir_comb} °C</strong></td>
-                    <td style="font-size: 0.75rem;">${c.policy}</td>
+                    <td>${cellNDVI}</td>
+                    <td>${cellUHVI}</td>
+                    <td>${cellDLST}</td>
+                    <td>${cellDAir}</td>
+                    <td style="font-size: 0.75rem;">${cellPolicy}</td>
                     <td><button class="btn btn-outline" style="padding: 2px 8px; font-size: 0.7rem;" onclick="focusCellOnMap('${c.id}')">View</button></td>
                 </tr>
-            `).join("");
+            `}).join("");
         }
 
         // Apply Priority Tier Grid Filters to both Table and Map
         function applyGridFilters() {
-            const tier = document.getElementById("sel-tier-filter") ? document.getElementById("sel-tier-filter").value : "all";
-            initHotspotsTable(tier);
-            updateMapChoropleth(tier);
+            applyAllFilters();
         }
 
         // Initialize Benchmarks Table
@@ -1379,7 +1437,7 @@
             const roles = {
                 "Mean Baseline": "Global Spatial Baseline (predicts training mean everywhere).",
                 "Ridge Regression": "L2 Linear Regularized Baseline (captures linear NDVI gradient).",
-                "Random Forest": "Non-linear Ensemble Baseline (overfits local coordinates).",
+                "Random Forest": "Non-linear Ensemble Baseline (exhibits large spatial holdout generalization gap).",
                 "Deep MLP (No PDE)": "Neural Ablation (3-layer MLP without physical constraint).",
                 "Urban Heat PINN": "Physics-Informed Neural Network (regularized by 2D heat energy PDE)."
             };
@@ -1435,10 +1493,11 @@
                     `;
                 } else if (layerType === "lst") {
                     html = `
-                        <div class="map-legend-title">Baseline LST</div>
+                        <div class="map-legend-title">Surface Temp (LST)</div>
                         <div class="map-legend-item"><span class="map-legend-color" style="background:#ef4444;"></span> ≥ 32.5 °C (Severe Hotspot)</div>
                         <div class="map-legend-item"><span class="map-legend-color" style="background:#f97316;"></span> 32.2 – 32.5 °C (Elevated)</div>
-                        <div class="map-legend-item"><span class="map-legend-color" style="background:#3b82f6;"></span> &lt; 32.2 °C (Moderate)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#eab308;"></span> 31.8 – 32.2 °C (Moderate)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#3b82f6;"></span> &lt; 31.8 °C (Cooler/Water)</div>
                     `;
                 } else if (layerType === "dens") {
                     html = `
@@ -1453,6 +1512,14 @@
                         <div class="map-legend-item"><span class="map-legend-color" style="background:#22c55e;"></span> ≥ 0.40 (High Canopy)</div>
                         <div class="map-legend-item"><span class="map-legend-color" style="background:#84cc16;"></span> 0.35 – 0.40 (Moderate)</div>
                         <div class="map-legend-item"><span class="map-legend-color" style="background:#eab308;"></span> &lt; 0.35 (Vegetation Deficit)</div>
+                    `;
+                } else if (layerType === "ndbi") {
+                    html = `
+                        <div class="map-legend-title">Built-Up Index (NDBI)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#ef4444;"></span> ≥ -0.10 (High Built-Up)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#f97316;"></span> -0.15 to -0.10 (Moderate)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#eab308;"></span> -0.18 to -0.15 (Low Built)</div>
+                        <div class="map-legend-item"><span class="map-legend-color" style="background:#38bdf8;"></span> &lt; -0.18 (Permeable)</div>
                     `;
                 } else if (layerType === "dLST_comb") {
                     html = `
@@ -1506,19 +1573,50 @@
 
             mapLayerGroup = L.layerGroup().addTo(map);
             markersGroup = L.layerGroup().addTo(map);
+            highlightLayerGroup = L.layerGroup().addTo(map);
 
             updateMapChoropleth();
             addTopHotspotMarkers();
         }
 
-        // Add Choropleth Circles
-        function updateMapChoropleth(tierFilter = null) {
+        // Add Choropleth Circles with Year and Layer Support
+        function updateMapChoropleth(tierFilter = null, selectedYear = null, activeLayer = null) {
             if (!map || !window.DASHBOARD_DATA || typeof L === "undefined") return;
             mapLayerGroup.clearLayers();
 
-            const layerType = document.getElementById("sel-map-layer").value;
-            updateMapLegend(layerType);
+            const layerType = activeLayer || (document.getElementById("sel-map-layer") ? document.getElementById("sel-map-layer").value : "uhvi");
+            const yr = selectedYear || currentSelectedYear || (document.getElementById("sel-year-filter") ? document.getElementById("sel-year-filter").value : "2025");
             const activeTier = tierFilter !== null ? tierFilter : (document.getElementById("sel-tier-filter") ? document.getElementById("sel-tier-filter").value : "all");
+
+            updateMapLegend(layerType);
+
+            // Update Indicator Badge
+            const indicatorEl = document.getElementById("map-filter-label");
+            if (indicatorEl) {
+                const yrLabel = yr === "all" ? "All Years (2024-2025)" : yr;
+                const layerLabels = {
+                    uhvi: "UHVI Layer",
+                    lst: "LST Layer",
+                    ndvi: "NDVI Layer",
+                    ndbi: "NDBI Layer",
+                    dens: "Density Layer",
+                    dLST_comb: "Cooling Layer"
+                };
+                indicatorEl.innerText = `${yrLabel} | Day | ${layerLabels[layerType] || layerType}`;
+            }
+
+            // Year Notice Banner for 2024 + Scenario/UHVI
+            const noticeEl = document.getElementById("map-year-notice");
+            const isUnmodeled2024 = (yr === "2024" && (layerType === "uhvi" || layerType === "dLST_comb"));
+            if (noticeEl) {
+                if (isUnmodeled2024) {
+                    noticeEl.style.display = "block";
+                    noticeEl.innerHTML = `⚠️ <strong>Modeled Layer Not Available for 2024:</strong> UHVI and mitigation scenarios were modeled on the 2025 baseline. Showing grid cell geometry with unmodeled status. Switch to <strong>LST</strong>, <strong>NDVI</strong>, <strong>NDBI</strong>, or <strong>Building Density</strong> to view 2024 satellite observations, or switch Year to <strong>2025</strong>.`;
+                } else {
+                    noticeEl.style.display = "none";
+                }
+            }
+
             const cells = window.DASHBOARD_DATA.grid_cells;
 
             cells.forEach(c => {
@@ -1526,16 +1624,26 @@
                 let color = "#38bdf8";
                 let fillOpacity = matchesTier ? 0.55 : 0.08;
 
-                if (layerType === "uhvi") {
+                // Extract year-specific values
+                const val_lst = yr === "2024" ? (c.years?.["2024"]?.lst ?? c.lst) : (yr === "2025" ? (c.years?.["2025"]?.lst ?? c.lst) : (((c.years?.["2024"]?.lst ?? c.lst) + (c.years?.["2025"]?.lst ?? c.lst)) / 2));
+                const val_ndvi = yr === "2024" ? (c.years?.["2024"]?.ndvi ?? c.ndvi) : (yr === "2025" ? (c.years?.["2025"]?.ndvi ?? c.ndvi) : (((c.years?.["2024"]?.ndvi ?? c.ndvi) + (c.years?.["2025"]?.ndvi ?? c.ndvi)) / 2));
+                const val_ndbi = yr === "2024" ? (c.years?.["2024"]?.ndbi ?? c.ndbi) : (yr === "2025" ? (c.years?.["2025"]?.ndbi ?? c.ndbi) : (((c.years?.["2024"]?.ndbi ?? c.ndbi) + (c.years?.["2025"]?.ndbi ?? c.ndbi)) / 2));
+
+                if (isUnmodeled2024) {
+                    color = "#64748b";
+                    fillOpacity = matchesTier ? 0.18 : 0.04;
+                } else if (layerType === "uhvi") {
                     color = c.uhvi >= 0.90 ? "#ef4444" : (c.uhvi >= 0.75 ? "#f97316" : (c.uhvi >= 0.50 ? "#eab308" : "#3b82f6"));
                     if (matchesTier) fillOpacity = c.uhvi >= 0.75 ? 0.7 : 0.4;
                 } else if (layerType === "lst") {
-                    color = c.lst >= 32.5 ? "#ef4444" : (c.lst >= 32.2 ? "#f97316" : "#3b82f6");
+                    color = val_lst >= 32.5 ? "#ef4444" : (val_lst >= 32.2 ? "#f97316" : (val_lst >= 31.8 ? "#eab308" : "#3b82f6"));
                 } else if (layerType === "dens") {
                     color = c.dens >= 1.0 ? "#ec4899" : (c.dens >= 0.2 ? "#8b5cf6" : "#334155");
                     if (matchesTier) fillOpacity = c.dens >= 0.2 ? 0.7 : 0.2;
                 } else if (layerType === "ndvi") {
-                    color = c.ndvi >= 0.40 ? "#22c55e" : (c.ndvi >= 0.35 ? "#84cc16" : "#eab308");
+                    color = val_ndvi >= 0.40 ? "#22c55e" : (val_ndvi >= 0.35 ? "#84cc16" : "#eab308");
+                } else if (layerType === "ndbi") {
+                    color = val_ndbi >= -0.10 ? "#ef4444" : (val_ndbi >= -0.15 ? "#f97316" : (val_ndbi >= -0.18 ? "#eab308" : "#38bdf8"));
                 } else if (layerType === "dLST_comb") {
                     const eff_comb = (c.dynamic_dLST_comb !== undefined) ? c.dynamic_dLST_comb : c.dLST_comb;
                     color = eff_comb >= 0.70 ? "#06b6d4" : (eff_comb >= 0.45 ? "#3b82f6" : "#6366f1");
@@ -1543,14 +1651,16 @@
 
                 const circle = L.circle([c.lat, c.lon], {
                     radius: 450,
-                    color: matchesTier ? color : "#475569",
-                    weight: matchesTier ? 1 : 0.5,
+                    color: isUnmodeled2024 ? "#64748b" : (matchesTier ? color : "#475569"),
+                    weight: isUnmodeled2024 ? 0.8 : (matchesTier ? 1 : 0.5),
                     fillColor: color,
                     fillOpacity: fillOpacity
                 });
 
-                circle.on("click", () => inspectCell(c));
-                circle.bindTooltip(`<b>${c.id}</b><br/>LST: ${c.lst}°C | UHVI: ${c.uhvi}<br/>Tier: ${c.tier.split(":")[0]}`);
+                circle.on("click", () => inspectCell(c, yr));
+                const yrTag = yr === "all" ? "All Years" : yr;
+                const uhviDisplay = isUnmodeled2024 ? "N/A (Modeled on 2025)" : (yr === '2024' ? 'N/A' : c.uhvi);
+                circle.bindTooltip(`<b>${c.id} (${yrTag})</b><br/>LST: ${val_lst.toFixed(2)}°C | NDVI: ${val_ndvi.toFixed(3)}<br/>NDBI: ${val_ndbi.toFixed(3)} | UHVI: ${uhviDisplay}<br/>Tier: ${c.tier.split(":")[0]}`);
                 mapLayerGroup.addLayer(circle);
             });
         }
@@ -1583,23 +1693,77 @@
         }
 
         // Inspect Cell
-        function inspectCell(c) {
+        function inspectCell(c, activeYear = null) {
             currentlyInspectedCell = c;
+            highlightSelectedCell(c);
+            const yr = activeYear || currentSelectedYear || (document.getElementById("sel-year-filter") ? document.getElementById("sel-year-filter").value : "2025");
+
             document.getElementById("insp-id").innerText = c.id;
-            document.getElementById("insp-tier").innerText = c.tier.split(":")[0];
+            document.getElementById("insp-tier").innerText = yr === "2024" ? "Observed 2024" : c.tier.split(":")[0];
+            document.getElementById("insp-coords").innerText = `${c.lon.toFixed(4)}, ${c.lat.toFixed(4)}`;
+            document.getElementById("insp-year-period").innerText = `${yr === "all" ? "All Years (2024–2025)" : yr} | ☀️ Day (Landsat ~10:30 AM)`;
             document.getElementById("insp-zone").innerText = c.zone.toUpperCase();
-            document.getElementById("insp-lst").innerText = `${c.lst} °C`;
             document.getElementById("insp-dens").innerText = `${c.dens}%`;
             document.getElementById("insp-bldgs").innerText = `${c.bld_count} footprints`;
-            document.getElementById("insp-ndvi").innerText = c.ndvi;
-            document.getElementById("insp-uhvi").innerText = c.uhvi;
-            document.getElementById("insp-policy").innerText = c.policy;
 
             const eff_dlst = (c.dynamic_dLST_comb !== undefined) ? c.dynamic_dLST_comb : c.dLST_comb;
             const eff_dair = (c.dynamic_dAir_comb !== undefined) ? c.dynamic_dAir_comb : c.dAir_comb;
 
-            document.getElementById("insp-dlst").innerText = Math.abs(eff_dlst) < 0.005 ? "0.00 °C" : `-${eff_dlst.toFixed(2)} °C`;
-            document.getElementById("insp-dair").innerText = Math.abs(eff_dair) < 0.005 ? "0.00 °C" : `-${eff_dair.toFixed(2)} °C`;
+            if (yr === "2024") {
+                const lst24 = c.years?.["2024"]?.lst ?? "N/A";
+                const ndvi24 = c.years?.["2024"]?.ndvi ?? "N/A";
+                const ndbi24 = c.years?.["2024"]?.ndbi ?? "N/A";
+                document.getElementById("insp-lst").innerText = `${lst24} °C`;
+                document.getElementById("insp-ndvi").innerText = ndvi24;
+                document.getElementById("insp-ndbi").innerText = ndbi24;
+                document.getElementById("insp-uhvi").innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem;">N/A (2025 model)</span>`;
+                document.getElementById("insp-policy").innerHTML = `<span style="color:var(--text-muted); font-size:0.72rem;">N/A (2025 baseline)</span>`;
+                document.getElementById("insp-dlst").innerHTML = `<span style="color:var(--text-muted);">N/A</span>`;
+                document.getElementById("insp-dair").innerHTML = `<span style="color:var(--text-muted);">N/A</span>`;
+                document.getElementById("insp-scenario-subnote").innerHTML = `<i>Mitigation scenarios and UHVI were simulated on the 2025 baseline.</i>`;
+            } else if (yr === "2025") {
+                const lst25 = c.years?.["2025"]?.lst ?? c.lst;
+                const ndvi25 = c.years?.["2025"]?.ndvi ?? c.ndvi;
+                const ndbi25 = c.years?.["2025"]?.ndbi ?? c.ndbi;
+                document.getElementById("insp-lst").innerText = `${lst25} °C (Observed) / ${c.lst} °C (PINN)`;
+                document.getElementById("insp-ndvi").innerText = ndvi25;
+                document.getElementById("insp-ndbi").innerText = ndbi25;
+                document.getElementById("insp-uhvi").innerText = c.uhvi;
+                document.getElementById("insp-policy").innerText = c.policy;
+                document.getElementById("insp-dlst").innerText = Math.abs(eff_dlst) < 0.005 ? "0.00 °C" : `-${eff_dlst.toFixed(2)} °C`;
+                document.getElementById("insp-dair").innerText = Math.abs(eff_dair) < 0.005 ? "0.00 °C" : `-${eff_dair.toFixed(2)} °C`;
+                document.getElementById("insp-scenario-subnote").innerHTML = `<i>Modeled counterfactual scenario projection (2025 baseline).</i>`;
+            } else {
+                // All Years
+                const lst24 = c.years?.["2024"]?.lst;
+                const lst25 = c.years?.["2025"]?.lst;
+                const meanLst = (lst24 != null && lst25 != null) ? ((lst24 + lst25) / 2).toFixed(2) : c.lst;
+                const meanNdvi = (c.years?.["2024"]?.ndvi != null && c.years?.["2025"]?.ndvi != null) ? ((c.years["2024"].ndvi + c.years["2025"].ndvi) / 2).toFixed(3) : c.ndvi;
+                const meanNdbi = (c.years?.["2024"]?.ndbi != null && c.years?.["2025"]?.ndbi != null) ? ((c.years["2024"].ndbi + c.years["2025"].ndbi) / 2).toFixed(3) : c.ndbi;
+
+                document.getElementById("insp-lst").innerText = `${meanLst} °C [2024: ${lst24 || 'N/A'}°C | 2025: ${lst25 || 'N/A'}°C]`;
+                document.getElementById("insp-ndvi").innerText = `${meanNdvi} [2024: ${c.years?.["2024"]?.ndvi || 'N/A'} | 2025: ${c.years?.["2025"]?.ndvi || 'N/A'}]`;
+                document.getElementById("insp-ndbi").innerText = `${meanNdbi} [2024: ${c.years?.["2024"]?.ndbi || 'N/A'} | 2025: ${c.years?.["2025"]?.ndbi || 'N/A'}]`;
+                document.getElementById("insp-uhvi").innerHTML = `${c.uhvi} <span style="font-size:0.7rem; color:var(--text-muted);">(2025 Model)</span>`;
+                document.getElementById("insp-policy").innerText = c.policy;
+                document.getElementById("insp-dlst").innerText = Math.abs(eff_dlst) < 0.005 ? "0.00 °C" : `-${eff_dlst.toFixed(2)} °C (2025 Model)`;
+                document.getElementById("insp-dair").innerText = Math.abs(eff_dair) < 0.005 ? "0.00 °C" : `-${eff_dair.toFixed(2)} °C (2025 Model)`;
+                document.getElementById("insp-scenario-subnote").innerHTML = `<i>Multi-year observed indices with 2025 modeled cooling scenarios.</i>`;
+            }
+        }
+
+        function highlightSelectedCell(cell) {
+            if (!map || typeof L === "undefined" || !highlightLayerGroup || !cell) return;
+            highlightLayerGroup.clearLayers();
+            const ring = L.circle([cell.lat, cell.lon], {
+                radius: 650,
+                color: "#f59e0b",
+                weight: 3,
+                dashArray: "5, 5",
+                fillColor: "#f59e0b",
+                fillOpacity: 0.18
+            });
+            highlightLayerGroup.addLayer(ring);
         }
 
         function focusCellOnMap(cellId) {
@@ -1613,6 +1777,11 @@
 
         function resetMapExtent() {
             if (!map || !window.DASHBOARD_DATA || !window.DASHBOARD_DATA.grid_cells || typeof L === "undefined") return;
+            if (highlightLayerGroup) highlightLayerGroup.clearLayers();
+            const searchBox = document.getElementById("inp-search-cell");
+            if (searchBox) searchBox.value = "";
+            const feedbackEl = document.getElementById("search-feedback");
+            if (feedbackEl) { feedbackEl.style.display = "none"; feedbackEl.innerText = ""; }
             const lats = window.DASHBOARD_DATA.grid_cells.map(c => c.lat);
             const lons = window.DASHBOARD_DATA.grid_cells.map(c => c.lon);
             map.fitBounds([
@@ -1622,10 +1791,33 @@
         }
 
         function searchGridCell(query) {
+            const feedbackEl = document.getElementById("search-feedback");
             const q = query.trim().toUpperCase();
-            if (!q || !window.DASHBOARD_DATA) return;
+            if (!q) {
+                if (feedbackEl) {
+                    feedbackEl.style.display = "none";
+                    feedbackEl.innerText = "";
+                }
+                if (highlightLayerGroup) highlightLayerGroup.clearLayers();
+                return;
+            }
+            if (!window.DASHBOARD_DATA) return;
             const cell = window.DASHBOARD_DATA.grid_cells.find(c => c.id.toUpperCase().includes(q));
-            if (cell) inspectCell(cell);
+            if (cell) {
+                if (feedbackEl) {
+                    feedbackEl.style.display = "none";
+                    feedbackEl.innerText = "";
+                }
+                inspectCell(cell);
+                if (map && typeof L !== "undefined") {
+                    map.setView([cell.lat, cell.lon], 13);
+                }
+            } else {
+                if (feedbackEl) {
+                    feedbackEl.style.display = "block";
+                    feedbackEl.innerText = `No grid cell matching "${q}" (e.g. E250_N2547)`;
+                }
+            }
         }
 
         // Live Simulation Recomputation
@@ -1730,18 +1922,65 @@
             recomputeLiveSimulation();
         }
 
-        // Presentation Slide Deck Logic
-        function changeSlide(delta) {
-            const nextIdx = activeSlideIndex + delta;
-            if (nextIdx < 1 || nextIdx > totalSlides) return;
+        // Filter Synchronization and Period Management
+        function applyAllFilters() {
+            const yrSelect = document.getElementById("sel-year-filter");
+            const requestedYear = yrSelect ? yrSelect.value : currentSelectedYear;
+            currentSelectedYear = validateYearSelection(requestedYear);
 
-            document.getElementById(`slide-${activeSlideIndex}`).classList.remove("active");
-            activeSlideIndex = nextIdx;
-            document.getElementById(`slide-${activeSlideIndex}`).classList.add("active");
+            const tierSelect = document.getElementById("sel-tier-filter");
+            const activeTier = tierSelect ? tierSelect.value : "all";
 
-            document.getElementById("slide-indicator").innerText = `Slide ${activeSlideIndex} of ${totalSlides}`;
-            document.getElementById("btn-prev-slide").disabled = activeSlideIndex === 1;
-            document.getElementById("btn-next-slide").disabled = activeSlideIndex === totalSlides;
+            const layerSelect = document.getElementById("sel-map-layer");
+            currentSelectedLayer = layerSelect ? layerSelect.value : "uhvi";
+
+            initKPIs(currentSelectedYear);
+            initHotspotsTable(activeTier, currentSelectedYear);
+            updateMapChoropleth(activeTier, currentSelectedYear, currentSelectedLayer);
+
+            if (currentlyInspectedCell) {
+                inspectCell(currentlyInspectedCell, currentSelectedYear);
+            }
+        }
+
+        function validateYearSelection(val) {
+            if (!window.DASHBOARD_DATA || !window.DASHBOARD_DATA.meta) return val;
+            const avail = window.DASHBOARD_DATA.meta.available_years || [2024, 2025];
+            if (val !== "all" && !avail.includes(parseInt(val))) {
+                const noticeEl = document.getElementById("map-year-notice");
+                if (noticeEl) {
+                    noticeEl.style.display = "block";
+                    noticeEl.innerHTML = `⚠️ <strong>Year ${val} Not Available:</strong> No records found in project dataset. Available observation years are: <strong>${avail.join(", ")}</strong>. Reverting to 2025 baseline.`;
+                    setTimeout(() => { if (noticeEl) noticeEl.style.display = "none"; }, 5000);
+                }
+                const yrSelect = document.getElementById("sel-year-filter");
+                if (yrSelect) yrSelect.value = "2025";
+                return "2025";
+            }
+            return val;
+        }
+
+        function setObservationPeriod(period) {
+            if (period === "night") {
+                showNightUnavailableModal();
+                return;
+            }
+            currentSelectedPeriod = "day";
+            const btnDay = document.getElementById("btn-period-day");
+            const btnNight = document.getElementById("btn-period-night");
+            if (btnDay) btnDay.classList.add("active");
+            if (btnNight) btnNight.classList.remove("active");
+            applyAllFilters();
+        }
+
+        function showNightUnavailableModal() {
+            const modal = document.getElementById("modal-night-info");
+            if (modal) modal.style.display = "flex";
+        }
+
+        function hideNightUnavailableModal() {
+            const modal = document.getElementById("modal-night-info");
+            if (modal) modal.style.display = "none";
         }
 
         // CSV Download Handlers
@@ -1757,10 +1996,39 @@
 
         function downloadHotspotsCSV() {
             if (!window.DASHBOARD_DATA) return;
-            const top50 = window.DASHBOARD_DATA.top_hotspots;
-            const headers = "grid_id,zone,lon,lat,LST_baseline,building_density_pct,building_count,NDVI,UHVI,priority_tier,delta_LST_combined,delta_T_air_combined,policy_recommendation\n";
-            const rows = top50.map(c => `${c.id},${c.zone},${c.lon},${c.lat},${c.lst},${c.dens},${c.bld_count},${c.ndvi},${c.uhvi},"${c.tier}",${c.dLST_comb},${c.dAir_comb},"${c.policy}"`).join("\n");
-            downloadCSV("ahmedabad_priority_hotspots_top50.csv", headers + rows);
+            const yr = currentSelectedYear || "2025";
+            let cells = [...window.DASHBOARD_DATA.grid_cells];
+            
+            const tierSelect = document.getElementById("sel-tier-filter");
+            const activeTier = tierSelect ? tierSelect.value : "all";
+            if (activeTier !== "all") {
+                cells = cells.filter(c => c.tier && c.tier.includes(activeTier));
+            }
+
+            if (yr === "2024") {
+                cells.sort((a, b) => {
+                    const lstA = a.years?.["2024"]?.lst ?? a.lst;
+                    const lstB = b.years?.["2024"]?.lst ?? b.lst;
+                    return lstB - lstA;
+                });
+            } else {
+                cells.sort((a, b) => b.uhvi - a.uhvi);
+            }
+            const top50 = cells.slice(0, 50);
+
+            const headers = "grid_id,zone,lon,lat,year,observation_period,LST_celsius,NDVI,NDBI,UHVI,priority_tier,delta_LST_combined,delta_T_air_combined,policy_recommendation\n";
+            const rows = top50.map(c => {
+                const lstVal = yr === "2024" ? (c.years?.["2024"]?.lst ?? "N/A") : (yr === "2025" ? (c.years?.["2025"]?.lst ?? c.lst) : c.lst);
+                const ndviVal = yr === "2024" ? (c.years?.["2024"]?.ndvi ?? "N/A") : (yr === "2025" ? (c.years?.["2025"]?.ndvi ?? c.ndvi) : c.ndvi);
+                const ndbiVal = yr === "2024" ? (c.years?.["2024"]?.ndbi ?? "N/A") : (yr === "2025" ? (c.years?.["2025"]?.ndbi ?? c.ndbi) : c.ndbi);
+                const uhviVal = yr === "2024" ? "N/A" : c.uhvi;
+                const tierVal = yr === "2024" ? "N/A (Modeled on 2025)" : c.tier;
+                const dLSTVal = yr === "2024" ? "N/A" : c.dLST_comb;
+                const dAirVal = yr === "2024" ? "N/A" : c.dAir_comb;
+                const policyVal = yr === "2024" ? "N/A (Modeled on 2025)" : c.policy;
+                return `${c.id},${c.zone},${c.lon},${c.lat},${yr},day,${lstVal},${ndviVal},${ndbiVal},${uhviVal},"${tierVal}",${dLSTVal},${dAirVal},"${policyVal}"`;
+            }).join("\n");
+            downloadCSV(`ahmedabad_priority_hotspots_top50_${yr}.csv`, headers + rows);
         }
 
         function downloadAllScenariosCSV() {
